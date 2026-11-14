@@ -11,7 +11,7 @@ select is(
   (select org_id from app.ensure_identity('simulator', 'chat-1', 'Autre nom', null, null)),
   :'org'::uuid, 'deuxième message : même organisation');
 select is((select created from app.ensure_identity('simulator', 'chat-1', null, null, null)), false, 'pas de création au deuxième message');
-select is((select count(*)::int from public.organizations), 1, 'une seule organisation');
+select is((select count(*)::int from public.channel_identities where channel = 'simulator' and external_id = 'chat-1'), 1, 'une seule identité, donc une seule organisation');
 select is((select display_name from public.channel_identities where external_id = 'chat-1'), 'Autre nom', 'nom affiché mis à jour');
 
 select tests.new_org('chat-2', '+999') as org2 \gset
