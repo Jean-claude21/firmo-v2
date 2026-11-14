@@ -16,7 +16,7 @@ select app.patch_line(:'org', :'doc', 1, '{"unit_price_minor": 25000}');
 select is((select count(*)::int from public.analytics_events where name = 'reading_corrected' and org_id = :'org'), 1, 'valeur lue corrigée : mesurée');
 
 select (app.issue_document(:'org', :'doc')).number as num \gset
-select is(:'num', 'DEV-' || extract(year from current_date)::int || '-0001', 'premier numéro du devis');
+select is(:'num', 'DEV-' || extract(year from current_date)::int || '-001', 'premier numéro du devis');
 select is((select status from public.documents where id = :'doc'), 'issued', 'document émis');
 select is((select to_confirm from public.document_lines where document_id = :'doc' and position = 1), '{}'::text[], 'valeurs confirmées à l''émission');
 select is((select issuer_snapshot ->> 'name' from public.documents where id = :'doc'), 'Soudure Kossi', 'en-tête figé');
@@ -33,8 +33,8 @@ select throws_ok(format('update public.documents set total_minor = 1 where id = 
 -- Numérotation par type : la facture commence à 1, le devis suivant à 2.
 select app.create_draft(:'org', 'quote', jsonb_build_array(tests.line('A', 1, 100))) as d2 \gset
 select app.create_draft(:'org', 'invoice', jsonb_build_array(tests.line('B', 1, 100))) as d3 \gset
-select is((app.issue_document(:'org', :'d3')).number, 'FAC-' || extract(year from current_date)::int || '-0001', 'facture n°1');
-select is((app.issue_document(:'org', :'d2')).number, 'DEV-' || extract(year from current_date)::int || '-0002', 'devis n°2, sans trou');
+select is((app.issue_document(:'org', :'d3')).number, 'FAC-' || extract(year from current_date)::int || '-001', 'facture n°1');
+select is((app.issue_document(:'org', :'d2')).number, 'DEV-' || extract(year from current_date)::int || '-002', 'devis n°2, sans trou');
 
 -- Quota d'essai (3) épuisé.
 select app.create_draft(:'org', 'quote', jsonb_build_array(tests.line('C', 1, 100))) as d4 \gset

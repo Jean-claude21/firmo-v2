@@ -14,9 +14,9 @@ export interface DraftInput {
   notes: string | null;
   template: string;
   applyTax: boolean;
-  discount: { percent: string | null; amount: string | null };
+  adjustments: Array<{ label: string; mode: "percent" | "amount"; sign: 1 | -1; base?: string; section?: number | null; value: string | null }>;
   client: { name: string; phone: string | null; email: string | null; address: string | null } | null;
-  lines: Array<{ label: string; quantity: string | null; unit: string | null; unitPrice: string | null }>;
+  sections: Array<{ title: string | null; showSubtotal: boolean; lines: Array<{ label: string; description?: string | null; kind?: string; quantity: string | null; unit: string | null; unitPrice: string | null; flatAmount?: string | null }> }>;
 }
 
 interface LineState {
@@ -25,9 +25,35 @@ interface LineState {
   quantity: string;
   unit: string;
   unitPrice: string;
+  /** Section d'origine (position) ; les nouvelles lignes vont dans la dernière. */
+  section: number | null;
+  kind: string;
+  description: string | null;
+  flatAmount: string;
 }
 
 let next = 1;
+
+/** Lignes du formulaire → sections du document (titres et sous-totaux d'origine conservés). */
+function groupSections(doc: DocumentDetail | null, lines: LineState[]): DraftInput["sections"] {
+  const sections = doc?.sections.length ? doc.sections.map((s) => ({ position: s.position, title: s.title, showSubtotal: s.showSubtotal })) : [{ position: 1, title: null, showSubtotal: false }];
+  const last = sections[sections.length - 1]!.position;
+  return sections
+    .map((s) => ({
+      title: s.title,
+      showSubtotal: s.showSubtotal,
+      lines: lines
+        .filter((l) => (l.section ?? last) === s.position)
+        .map((l) => ({
+          label: l.label.trim(), description: l.description, kind: l.kind,
+          quantity: l.kind === "priced" ? l.quantity.trim().replace(",", ".") || null : null,
+          unit: l.unit || null,
+          unitPrice: l.kind === "priced" ? l.unitPrice.trim() || null : null,
+          flatAmount: l.kind === "flat" ? l.flatAmount.trim() || null : null,
+        })),
+    }))
+    .filter((s) => s.lines.length > 0);
+}
 
 export function DraftEditor({ me, doc, onSave, saving, error }: { me: Me; doc: DocumentDetail | null; onSave: (input: DraftInput) => void; saving: boolean; error: ApiError | null }) {
   const t = useT();
@@ -38,13 +64,18 @@ export function DraftEditor({ me, doc, onSave, saving, error }: { me: Me; doc: D
   const [notes, setNotes] = useState(doc?.notes ?? "");
   const [template, setTemplate] = useState(doc?.template ?? me.org.templateCode);
   const [applyTax, setApplyTax] = useState(doc?.applyTax ?? me.org.taxRegistered);
-  const [discountMode, setDiscountMode] = useState<"none" | "percent" | "amount">(doc?.discountBp ? "percent" : doc?.discountMinor ? "amount" : "none");
-  const [discount, setDiscount] = useState(doc?.discountBp ? String(doc.discountBp / 100).replace(".", cur.decimalSeparator) : doc?.discountMinor ? majorText(doc.discountMinor, cur) : "");
+  // La remise de ce formulaire est l'ajustement négatif du document ; les autres ajustements
+  // (main-d'œuvre, transport…) sont conservés tels quels.
+  const existingDiscount = doc?.adjustments.find((a) => a.sign === -1) ?? null;
+  const [discountMode, setDiscountMode] = useState<"none" | "percent" | "amount">(existingDiscount ? existingDiscount.mode : "none");
+  const [discount, setDiscount] = useState(
+    existingDiscount?.mode === "percent" && existingDiscount.rateBp ? String(existingDiscount.rateBp / 100).replace(".", cur.decimalSeparator)
+      : existingDiscount?.valueMinor ? majorText(existingDiscount.valueMinor, cur) : "");
   const [client, setClient] = useState({ name: doc?.client.name ?? "", phone: doc?.client.phone ?? "", email: doc?.client.email ?? "", address: doc?.client.address ?? "" });
   const [lines, setLines] = useState<LineState[]>(
     doc?.lines.length
-      ? doc.lines.map((l) => ({ key: next++, label: l.label, quantity: formatQty(l.quantity, cur.decimalSeparator), unit: l.unit ?? "", unitPrice: majorText(l.unitPriceMinor, cur) }))
-      : [{ key: next++, label: "", quantity: "1", unit: "unit", unitPrice: "" }],
+      ? doc.lines.map((l) => ({ key: next++, label: l.label, quantity: formatQty(l.quantity, cur.decimalSeparator), unit: l.unit ?? "", unitPrice: majorText(l.unitPriceMinor, cur), section: l.sectionPosition, kind: l.kind, description: l.description, flatAmount: majorText(l.flatAmountMinor, cur) }))
+      : [{ key: next++, label: "", quantity: "1", unit: "", unitPrice: "", section: null, kind: "priced", description: null, flatAmount: "" }],
   );
   const fieldError = (name: string) => error?.fields[name];
 
@@ -58,11 +89,15 @@ export function DraftEditor({ me, doc, onSave, saving, error }: { me: Me; doc: D
       notes: notes.trim() || null,
       template,
       applyTax,
-      discount: { percent: discountMode === "percent" ? discount : null, amount: discountMode === "amount" ? discount : null },
+      adjustments: [
+        ...(doc?.adjustments ?? []).filter((a) => a.sign !== -1).map((a) => ({
+          label: a.label, mode: a.mode, sign: a.sign, base: a.base, section: a.sectionPosition,
+          value: a.mode === "percent" ? (a.rateBp ? String(a.rateBp / 100) : null) : majorText(a.valueMinor, cur) || null,
+        })),
+        ...(discountMode !== "none" && discount.trim() ? [{ label: E.discount, mode: discountMode, sign: -1 as const, value: discount.trim() }] : []),
+      ],
       client: client.name.trim() ? { name: client.name.trim(), phone: client.phone || null, email: client.email || null, address: client.address || null } : null,
-      lines: lines
-        .filter((l) => l.label.trim())
-        .map((l) => ({ label: l.label.trim(), quantity: l.quantity.trim().replace(",", ".") || null, unit: l.unit || null, unitPrice: l.unitPrice.trim() || null })),
+      sections: groupSections(doc, lines.filter((l) => l.label.trim())),
     });
   }
 
@@ -98,6 +133,7 @@ export function DraftEditor({ me, doc, onSave, saving, error }: { me: Me; doc: D
       <section className="card p-5">
         <p className="mb-3 font-semibold">{E.lines}</p>
         <div className="space-y-4">
+          <datalist id="firmo-units">{me.reference.units.map((u) => <option key={u.code} value={u.short} />)}</datalist>
           {lines.map((l, i) => {
             const saved = doc?.lines[i];
             return (
@@ -109,20 +145,20 @@ export function DraftEditor({ me, doc, onSave, saving, error }: { me: Me; doc: D
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <Field label={E.quantity} error={fieldError(`lines.${i}.quantity`)}>
-                    <Input inputMode="decimal" value={l.quantity} onChange={(e) => update(l.key, { quantity: e.target.value })} className="text-right" />
+                    <Input inputMode="decimal" value={l.kind === "priced" ? l.quantity : ""} onChange={(e) => update(l.key, { quantity: e.target.value })} className="text-right" disabled={l.kind !== "priced"} />
                   </Field>
                 </div>
                 <div className="col-span-4 sm:col-span-2">
                   <Field label={E.unit}>
-                    <Select value={l.unit} onChange={(e) => update(l.key, { unit: e.target.value })}>
-                      <option value="">—</option>
-                      {me.reference.units.map((u) => <option key={u.code} value={u.code}>{u.label}</option>)}
-                    </Select>
+                    {/* Unité telle que l'artisan l'écrit (« barre », « m² ») ; la liste ne fait que proposer. */}
+                    <Input value={l.unit} onChange={(e) => update(l.key, { unit: e.target.value })} maxLength={24} list="firmo-units" disabled={l.kind !== "priced"} />
                   </Field>
                 </div>
                 <div className="col-span-4 sm:col-span-3">
                   <Field label={`${E.unitPrice} (${cur.symbol})`} error={fieldError(`lines.${i}.unitPrice`)}>
-                    <Input inputMode="decimal" value={l.unitPrice} onChange={(e) => update(l.key, { unitPrice: e.target.value })} className="text-right tabular-nums" />
+                    {/* Ligne au forfait : le montant de la ligne ; ligne descriptive : aucun montant. */}
+                    <Input inputMode="decimal" value={l.kind === "flat" ? l.flatAmount : l.unitPrice} disabled={l.kind === "text"}
+                      onChange={(e) => update(l.key, l.kind === "flat" ? { flatAmount: e.target.value } : { unitPrice: e.target.value })} className="text-right tabular-nums" />
                   </Field>
                 </div>
                 <div className="col-span-2 flex items-end justify-end sm:col-span-1">
@@ -137,7 +173,7 @@ export function DraftEditor({ me, doc, onSave, saving, error }: { me: Me; doc: D
             );
           })}
         </div>
-        <Button type="button" variant="outline" className="mt-4" icon={<Plus className="size-4" />} onClick={() => setLines((ls) => [...ls, { key: next++, label: "", quantity: "1", unit: "unit", unitPrice: "" }])}>
+        <Button type="button" variant="outline" className="mt-4" icon={<Plus className="size-4" />} onClick={() => setLines((ls) => [...ls, { key: next++, label: "", quantity: "1", unit: "", unitPrice: "", section: null, kind: "priced", description: null, flatAmount: "" }])}>
           {E.addLine}
         </Button>
       </section>

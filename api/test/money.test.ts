@@ -75,6 +75,11 @@ describe("lettres", () => {
     [200000n, "deux cent mille"],
     [1500000n, "un million cinq cent mille"],
     [2000000n, "deux millions"],
+    // Régression : le s de « trois » ne tombe pas devant « mille » (cas 02 de la v1).
+    [1103000n, "un million cent trois mille"],
+    [3000n, "trois mille"],
+    [6000n, "six mille"],
+    [102667350n, "cent deux millions six cent soixante-sept mille trois cent cinquante"],
   ])("%s → %s", (n, words) => {
     expect(frenchWords(n)).toBe(words);
   });

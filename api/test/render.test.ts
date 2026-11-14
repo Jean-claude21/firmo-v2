@@ -1,41 +1,32 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { palette, contrast } from "../src/render/colors.js";
-import { renderModel } from "../src/render/model.js";
-import { DocumentRenderer } from "../src/render/renderer.js";
-import { CASES } from "./render/fixtures.js";
+import { contrast, readableOnWhite } from "../src/render/colors.js";
+import { monogram, percentText } from "../src/render/model.js";
+import { formatDate } from "../src/voix/document.js";
 
-// Rend chaque cas difficile dans chaque modèle. Les images sont écrites dans
-// test/__output__/render pour la relecture visuelle (ignorées par git).
-const OUT = path.resolve("test/__output__/render");
-const renderer = new DocumentRenderer();
+// Règles du rendu sans base. Les rendus complets (dix cas v1) sont dans v1-cases.db.test.ts.
 
-describe("couleurs", () => {
-  it("une couleur claire reste en fond, texte lisible dessus, accent assombri", () => {
-    const p = palette("#F4D35E");
-    expect(p.brand).toBe("#F4D35E");
-    expect(contrast(p.accent, "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(p.brand, p.onBrand)).toBeGreaterThanOrEqual(4.5);
+describe("rendu", () => {
+  it("monogramme : initiales des deux premiers mots", () => {
+    expect(monogram("ATELIER KODJO")).toBe("AK");
+    expect(monogram("Établissements Bâtir")).toBe("ÉB");
+    expect(monogram("Solvia")).toBe("SO");
+    expect(monogram("")).toBe("");
   });
-});
 
-describe("rendu Typst", () => {
-  mkdirSync(OUT, { recursive: true });
+  it("pourcentages lisibles, au-delà de 100 % compris", () => {
+    expect(percentText(2500, ",")).toBe("25");
+    expect(percentText(1250, ",")).toBe("12,5");
+    expect(percentText(15000, ",")).toBe("150");
+  });
 
-  for (const [name, doc] of Object.entries(CASES)) {
-    const templates = name === "devis_simple" ? ["classic", "modern", "clean"] : [doc.template];
-    for (const template of templates) {
-      it(`${name} · ${template}`, async () => {
-        const model = renderModel({ ...doc, template }, { hasLogo: false, hasQr: true });
-        const out = await renderer.render({ model, qrUrl: "https://firmo.example/d/abc123" });
-        expect(out.pdf.subarray(0, 5).toString()).toBe("%PDF-");
-        expect(out.png.subarray(1, 4).toString()).toBe("PNG");
-        expect(out.pages).toBeGreaterThanOrEqual(1);
-        writeFileSync(path.join(OUT, `${name}-${template}.png`), out.png);
-        writeFileSync(path.join(OUT, `${name}-${template}.pdf`), out.pdf);
-        if (name === "soixante_lignes") expect(out.pages).toBeGreaterThan(1);
-      }, 30_000);
+  it("date du document au format validé 08.08.2026", () => {
+    expect(formatDate("2026-08-08", "fr")).toBe("08.08.2026");
+  });
+
+  it("une couleur trop claire est assombrie en silence jusqu'au contraste AA", () => {
+    for (const color of ["#F4D35E", "#FFFFFF", "#9BE7FF", "#A8391F"]) {
+      expect(contrast(readableOnWhite(color), "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
     }
-  }
+    expect(readableOnWhite("#A8391F")).toBe("#A8391F");
+  });
 });

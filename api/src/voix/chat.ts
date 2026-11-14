@@ -61,6 +61,7 @@ export interface ChatWords {
   editHint: string;
   lineNotFound: (n: number) => string;
   invalidValue: (raw: string) => string;
+  discountLabel: string;
   updated: string;
   error: string;
   revised: (number: string) => string;
@@ -140,6 +141,7 @@ const fr: ChatWords = {
   buttons: { issue: "✅ Émettre", edit: "✏️ Corriger", cancel: "🗑️ Annuler", documents: "📂 Documents", settings: "⚙️ Réglages" },
   editHint: "Dis-moi quoi changer, ex. « ligne 2 prix 15000 », « enlève la 3 », « client Hôtel du Lac ».",
   lineNotFound: (n) => `Il n'y a pas de ligne ${n}.`,
+  discountLabel: "Remise",
   invalidValue: (raw) => `Je n'ai pas compris la valeur « ${raw} ». Écris-la en chiffres, ex. 15000.`,
   updated: "C'est corrigé.",
   error: "Un problème est survenu de mon côté. Réessaie dans un instant.",
@@ -201,6 +203,7 @@ const en: ChatWords = {
   buttons: { issue: "✅ Issue", edit: "✏️ Correct", cancel: "🗑️ Cancel", documents: "📂 Documents", settings: "⚙️ Settings" },
   editHint: "Tell me what to change, e.g. \"line 2 price 15000\", \"remove 3\", \"client Lake Hotel\".",
   lineNotFound: (n) => `There is no line ${n}.`,
+  discountLabel: "Discount",
   invalidValue: (raw) => `I didn't understand the value "${raw}". Write it in figures, e.g. 15000.`,
   updated: "Done.",
   error: "Something went wrong on my side. Please try again shortly.",

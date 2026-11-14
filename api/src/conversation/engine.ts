@@ -3,8 +3,8 @@ import type { AiCall, AiReader, EditOp, ReadContext, ReadLine, SaleReading } fro
 import { BUTTONS, type Command, parseCommand } from "./commands.js";
 import type { ConversationState, ConversationStore, OrgContext, StoredMessage } from "./store.js";
 import { ChannelError, type Button, type Channel } from "../channels/types.js";
-import { formatMoney, formatQuantity, parseQuantity } from "../documents/money.js";
-import type { DocumentStore, DocumentView } from "../documents/store.js";
+import { formatMoney, formatQuantity, parsePercentBp, parseQuantity } from "../documents/money.js";
+import type { AdjustmentInput, DocumentStore, DocumentView, LineInput } from "../documents/store.js";
 import { HttpError } from "../lib/errors.js";
 import type { ObjectStore } from "../lib/storage.js";
 import type { RenderedFiles, RenderService } from "../render/service.js";
@@ -184,7 +184,7 @@ export class ConversationEngine {
       return;
     }
     const type = reading.documentType ?? "quote";
-    const id = await this.d.documents.createDraft(ctx.orgId, type, guarded.lines, "chat", reading.title?.slice(0, 200) ?? null);
+    const id = await this.d.documents.createDraft(ctx.orgId, type, this.unitText(ctx, guarded.lines), "chat", reading.title?.slice(0, 200) ?? null);
     if (reading.clientName) await this.d.documents.setClient(ctx.orgId, id, reading.clientName.slice(0, 160));
     await this.d.store.setState(t.msg.identityId, id);
     t.documentId = id;
@@ -254,7 +254,7 @@ export class ConversationEngine {
         n: l.position,
         label: l.label,
         qty: l.quantity ? formatQuantity(l.quantity, doc.currency.decimalSeparator) : null,
-        unit: l.unitLabel,
+        unit: l.unit,
         price: l.unitPriceMinor !== null ? money(l.unitPriceMinor) : null,
         total: l.lineTotalMinor !== null ? money(l.lineTotalMinor) : null,
         toConfirm: l.toConfirm,
@@ -263,7 +263,7 @@ export class ConversationEngine {
       complete: doc.blockers.filter((b) => b !== "missing_business_name").length === 0,
       client: doc.client.name,
       title: doc.title,
-      discount: BigInt(doc.discountTotalMinor) > 0n ? `− ${money(doc.discountTotalMinor)}` : null,
+      discount: BigInt(doc.adjustmentsTotalMinor) < 0n ? `− ${money((-BigInt(doc.adjustmentsTotalMinor)).toString())}` : null,
       tax: BigInt(doc.taxMinor) > 0n ? `${doc.taxLabel ?? ""} ${money(doc.taxMinor)}`.trim() : null,
       simulated: this.d.reader.simulated,
     };
@@ -281,19 +281,24 @@ export class ConversationEngine {
     await this.say(t, t.w.draft(view), buttons);
   }
 
+  /** Le document garde l'unité telle qu'elle s'écrit (« forfait », « m² ») : code lu → libellé court. */
+  private unitText<L extends LineInput>(ctx: OrgContext, lines: L[]): L[] {
+    return lines.map((l) => ({ ...l, unit: l.unit ? (ctx.units.find((u) => u.code === l.unit)?.short ?? l.unit) : null }));
+  }
+
   private amount(t: Turn, raw: string): bigint | null {
     return amountFromUser(raw, t.ctx.currency.minorUnits);
   }
 
-  /** Remise : « 10% » → points de base ; « 5000 » → montant. Valeur illisible : null. */
-  private discount(t: Turn, raw: string): Record<string, unknown> | null {
-    const pct = /^(\d+(?:[.,]\d{1,2})?)\s*%$/.exec(raw.trim());
-    if (pct) {
-      const bp = Math.round(Number(pct[1]!.replace(",", ".")) * 100);
-      return bp >= 1 && bp <= 10000 ? { discount_bp: bp } : null;
+  /** Remise : « 10% » → ajustement en pourcentage ; « 5000 » → en montant. Illisible : null. */
+  private discount(t: Turn, raw: string): AdjustmentInput | null {
+    const label = t.w.discountLabel;
+    if (/%\s*$/.test(raw)) {
+      const bp = parsePercentBp(raw);
+      return bp !== null && bp <= 10000 ? { label, mode: "percent", sign: -1, rateBp: bp } : null;
     }
     const minor = this.amount(t, raw);
-    return minor !== null && minor > 0n ? { discount_minor: minor.toString() } : null;
+    return minor !== null && minor > 0n ? { label, mode: "amount", sign: -1, valueMinor: minor.toString() } : null;
   }
 
   private async applyOps(t: Turn, draft: DocumentView, ops: EditOp[], source: string) {
@@ -326,7 +331,7 @@ export class ConversationEngine {
           break;
         case "set_unit":
           if (!lineExists(op.line)) return this.say(t, t.w.lineNotFound(op.line));
-          await this.d.documents.patchLine(org, draft.id, op.line, { unit: op.unit && units.has(op.unit) ? op.unit : null });
+          await this.d.documents.patchLine(org, draft.id, op.line, { unit: op.unit && units.has(op.unit) ? this.unitText(t.ctx, [{ label: "", quantity: null, unitPriceMinor: null, unit: op.unit }])[0]!.unit : null });
           break;
         case "remove":
           if (!lineExists(op.line)) return this.say(t, t.w.lineNotFound(op.line));
@@ -334,7 +339,7 @@ export class ConversationEngine {
           break;
         case "add": {
           const guarded = guardLines(op.lines as ReadLine[], source, minorUnits, units);
-          if (guarded.lines.length) await this.d.documents.addLines(org, draft.id, guarded.lines);
+          if (guarded.lines.length) await this.d.documents.addLines(org, draft.id, this.unitText(t.ctx, guarded.lines));
           break;
         }
         case "client":
@@ -344,13 +349,19 @@ export class ConversationEngine {
           await this.d.documents.updateDraft(org, draft.id, { title: op.text });
           break;
         case "discount": {
+          // Une seule remise gérée par cette commande : celle déjà posée (signe négatif) est remplacée.
+          const existing = draft.adjustments.find((a) => a.sign === -1);
           if (op.valueText === null) {
-            await this.d.documents.updateDraft(org, draft.id, { discount_bp: null, discount_minor: null });
+            if (existing) await this.d.documents.removeAdjustment(org, draft.id, existing.position);
             break;
           }
-          const patch = this.discount(t, op.valueText);
-          if (!patch) return this.say(t, t.w.invalidValue(op.valueText));
-          await this.d.documents.updateDraft(org, draft.id, patch);
+          const adjustment = this.discount(t, op.valueText);
+          if (!adjustment) return this.say(t, t.w.invalidValue(op.valueText));
+          if (existing) {
+            await this.d.documents.patchAdjustment(org, draft.id, existing.position, adjustment);
+          } else {
+            await this.d.documents.addAdjustment(org, draft.id, adjustment);
+          }
           break;
         }
         case "tax":

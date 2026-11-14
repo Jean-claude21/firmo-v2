@@ -66,7 +66,7 @@ export class DocumentRenderer {
     const doc = compiled.result;
     const pdf = this.compiler.pdf(doc);
     // SVG simple : sans variables CSS, lisible par resvg et par les navigateurs.
-    const svg = this.compiler.plainSvg(doc);
+    const svg = placePageBackgrounds(this.compiler.plainSvg(doc));
     const pages = doc.numOfPages;
     const png = firstPagePng(svg);
     return {
@@ -78,6 +78,18 @@ export class DocumentRenderer {
       durationMs: Date.now() - started,
     };
   }
+}
+
+/**
+ * Le SVG du compilateur dessine le fond blanc de chaque page à l'origine, sans le décalage de sa
+ * page : à partir de deux pages, le fond de la page 2 recouvre la page 1. On replace chaque fond
+ * dans le groupe décalé qui le suit.
+ */
+export function placePageBackgrounds(svg: string): string {
+  return svg.replace(
+    /\n(\s*)(<path class="typst-shape" fill="#ffffff"[^>]*\/>)\n\1(<g transform="matrix\(1 0 0 1 0 [\d.]+\)">)/g,
+    (_m, indent: string, background: string, group: string) => `\n${indent}${group}\n${indent}  ${background}`,
+  );
 }
 
 /** PNG de la première page : on restreint la zone visible du SVG à une page A4. */

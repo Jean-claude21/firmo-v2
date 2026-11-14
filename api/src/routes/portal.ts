@@ -2,13 +2,13 @@ import type { Hono } from "hono";
 import type pg from "pg";
 import { z } from "zod";
 import { amountFromUser } from "../ai/guard.js";
-import { parseQuantity } from "../documents/money.js";
-import type { DocumentStore, DocumentView, LineInput } from "../documents/store.js";
+import { parsePercentBp, parseQuantity } from "../documents/money.js";
+import type { AdjustmentInput, DocumentStore, DocumentView, DraftContent, LineInput } from "../documents/store.js";
 import { sql, sqlOne } from "../lib/db.js";
 import { httpErrors } from "../lib/errors.js";
 import { orgIdOf, requireOrg, type SessionSigner, type SessionVariables } from "../lib/session.js";
 import type { ObjectStore } from "../lib/storage.js";
-import { parseJson, parseQuery } from "../lib/validate.js";
+import { parseJson, parseQuery, parseWith } from "../lib/validate.js";
 import { decodeImage, detectImageType, dominantColor, toPng } from "../portal/logo.js";
 import type { RenderService } from "../render/service.js";
 
@@ -34,24 +34,60 @@ function publicView(doc: DocumentView) {
 
 const lineSchema = z.object({
   label: z.string().trim().min(1).max(300),
-  quantity: z.string().max(20).nullable(),
-  unit: z.string().max(20).nullable(),
+  description: z.string().max(300).nullable().optional(),
+  /** priced : quantité × prix ; flat : montant forfaitaire ; text : ligne descriptive. */
+  kind: z.enum(["priced", "flat", "text"]).optional(),
+  quantity: z.string().max(20).nullable().optional(),
+  unit: z.string().max(24).nullable().optional(),
   /** Prix tel que tapé par l'artisan, en unités majeures (« 15 000 », « 12,50 »). */
-  unitPrice: z.string().max(30).nullable(),
+  unitPrice: z.string().max(30).nullable().optional(),
+  flatAmount: z.string().max(30).nullable().optional(),
 });
+
+const sectionSchema = z.object({
+  title: z.string().trim().max(160).nullable(),
+  showSubtotal: z.boolean().optional(),
+  lines: z.array(lineSchema).max(200),
+});
+
+const adjustmentSchema = z.object({
+  label: z.string().trim().min(1).max(160),
+  mode: z.enum(["percent", "amount"]),
+  sign: z.union([z.literal(1), z.literal(-1)]).optional(),
+  base: z.enum(["items_total", "section", "taxable_base"]).optional(),
+  section: z.number().int().min(1).max(200).nullable().optional(),
+  /** Pourcentage tel que tapé (« 25 », « 12,5 »), ou montant en unités majeures. */
+  value: z.string().max(30).nullable(),
+});
+
+const clauseRefSchema = z.union([
+  z.object({ clauseId: z.string().uuid() }),
+  z.object({ title: z.string().max(120).nullable().optional(), body: z.string().trim().min(1).max(600) }),
+]);
 
 const draftSchema = z.object({
   type: z.enum(["quote", "proforma", "invoice", "delivery_note"]).optional(),
   title: z.string().max(200).nullable().optional(),
+  summary: z.string().max(300).nullable().optional(),
+  site: z.string().max(200).nullable().optional(),
+  deliveryText: z.string().max(200).nullable().optional(),
+  warrantyText: z.string().max(200).nullable().optional(),
+  assumptions: z.string().max(1000).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
-  template: z.enum(["classic", "modern", "clean"]).optional(),
+  validityDays: z.number().int().min(1).max(365).nullable().optional(),
+  /** Acompte en pourcentage tel que tapé (« 30 »). */
+  depositPercent: z.string().max(10).nullable().optional(),
+  template: z.string().max(30).optional(),
   applyTax: z.boolean().optional(),
-  discount: z.object({ percent: z.string().max(10).nullable().optional(), amount: z.string().max(30).nullable().optional() }).optional(),
   client: z
     .object({ name: z.string().trim().min(1).max(160), phone: z.string().max(32).nullable().optional(), email: z.string().max(200).nullable().optional(), address: z.string().max(300).nullable().optional() })
     .nullable()
     .optional(),
+  sections: z.array(sectionSchema).max(50).optional(),
+  /** Compatibilité : lignes à plat (une section sans titre). */
   lines: z.array(lineSchema).max(200).optional(),
+  adjustments: z.array(adjustmentSchema).max(30).optional(),
+  clauses: z.array(clauseRefSchema).max(30).optional(),
 });
 
 export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>, d: PortalDeps) {
@@ -63,45 +99,73 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
     return r.m;
   }
 
-  function toLines(lines: z.infer<typeof lineSchema>[], minor: number): LineInput[] {
+  function toLines(lines: z.infer<typeof lineSchema>[], minor: number, path: string): LineInput[] {
     return lines.map((l, i) => {
-      const quantity = l.quantity ? parseQuantity(l.quantity) : null;
-      if (l.quantity && !quantity) throw httpErrors.validation({ [`lines.${i}.quantity`]: "quantité invalide" });
-      const price = l.unitPrice ? amountFromUser(l.unitPrice, minor) : null;
-      if (l.unitPrice && price === null) throw httpErrors.validation({ [`lines.${i}.unitPrice`]: "prix invalide" });
-      return { label: l.label, quantity, unit: l.unit || null, unitPriceMinor: price?.toString() ?? null, source: "typed" };
+      const at = `${path}.${i}`;
+      const kind = l.kind ?? (l.flatAmount ? "flat" : "priced");
+      const quantity = kind === "priced" && l.quantity ? parseQuantity(l.quantity) : null;
+      if (kind === "priced" && l.quantity && !quantity) throw httpErrors.validation({ [`${at}.quantity`]: "quantité invalide" });
+      const price = kind === "priced" && l.unitPrice ? amountFromUser(l.unitPrice, minor) : null;
+      if (kind === "priced" && l.unitPrice && price === null) throw httpErrors.validation({ [`${at}.unitPrice`]: "prix invalide" });
+      const flat = kind === "flat" && l.flatAmount ? amountFromUser(l.flatAmount, minor) : null;
+      if (kind === "flat" && l.flatAmount && flat === null) throw httpErrors.validation({ [`${at}.flatAmount`]: "montant invalide" });
+      return {
+        label: l.label, description: l.description || null, kind, quantity, unit: l.unit || null,
+        unitPriceMinor: price?.toString() ?? null, flatAmountMinor: flat?.toString() ?? null, source: "typed",
+      };
+    });
+  }
+
+  function toAdjustments(adjustments: z.infer<typeof adjustmentSchema>[], minor: number): AdjustmentInput[] {
+    return adjustments.map((a, i) => {
+      let rateBp: number | null = null;
+      let valueMinor: string | null = null;
+      if (a.value) {
+        if (a.mode === "percent") {
+          rateBp = parsePercentBp(a.value);
+          if (rateBp === null) throw httpErrors.validation({ [`adjustments.${i}.value`]: "pourcentage invalide" });
+        } else {
+          const v = amountFromUser(a.value, minor);
+          if (v === null || v <= 0n) throw httpErrors.validation({ [`adjustments.${i}.value`]: "montant invalide" });
+          valueMinor = v.toString();
+        }
+      }
+      return { label: a.label, mode: a.mode, sign: a.sign ?? 1, base: a.base ?? "items_total", section: a.section ?? null, rateBp, valueMinor };
     });
   }
 
   async function applyDraft(orgId: string, id: string, input: z.infer<typeof draftSchema>) {
     const minor = await minorUnits(orgId);
-    const patch: Record<string, unknown> = {};
-    if (input.type) patch.type = input.type;
-    if (input.title !== undefined) patch.title = input.title;
-    if (input.notes !== undefined) patch.notes = input.notes;
-    if (input.template) patch.template = input.template;
-    if (input.applyTax !== undefined) patch.apply_tax = input.applyTax;
-    if (input.discount) {
-      if (input.discount.percent) {
-        const pct = Number(input.discount.percent.replace(",", ".").replace("%", ""));
-        if (!(pct > 0 && pct <= 100) || Math.round(pct * 100) !== pct * 100) throw httpErrors.validation({ "discount.percent": "pourcentage invalide" });
-        patch.discount_bp = Math.round(pct * 100);
-      } else if (input.discount.amount) {
-        const v = amountFromUser(input.discount.amount, minor);
-        if (v === null || v <= 0n) throw httpErrors.validation({ "discount.amount": "montant invalide" });
-        patch.discount_minor = v.toString();
-      } else {
-        patch.discount_bp = null;
-        patch.discount_minor = null;
-      }
+    const content: DraftContent = {};
+    if (input.type) content.type = input.type;
+    if (input.title !== undefined) content.title = input.title;
+    if (input.summary !== undefined) content.summary = input.summary;
+    if (input.site !== undefined) content.site = input.site;
+    if (input.deliveryText !== undefined) content.delivery_text = input.deliveryText;
+    if (input.warrantyText !== undefined) content.warranty_text = input.warrantyText;
+    if (input.assumptions !== undefined) content.assumptions = input.assumptions;
+    if (input.notes !== undefined) content.notes = input.notes;
+    if (input.validityDays !== undefined) content.validity_days = input.validityDays;
+    if (input.depositPercent !== undefined) {
+      const bp = input.depositPercent ? parsePercentBp(input.depositPercent) : null;
+      if (input.depositPercent && (bp === null || bp > 10000)) throw httpErrors.validation({ depositPercent: "pourcentage invalide" });
+      content.deposit_bp = bp;
     }
-    if (Object.keys(patch).length) await d.documents.updateDraft(orgId, id, patch);
+    if (input.template) content.template = input.template;
+    if (input.applyTax !== undefined) content.apply_tax = input.applyTax;
+    if (input.sections) {
+      content.sections = input.sections.map((s, i) => ({ title: s.title || null, showSubtotal: s.showSubtotal, lines: toLines(s.lines, minor, `sections.${i}.lines`) }));
+    } else if (input.lines) {
+      content.sections = input.lines.length ? [{ title: null, lines: toLines(input.lines, minor, "lines") }] : [];
+    }
+    if (input.adjustments) content.adjustments = toAdjustments(input.adjustments, minor);
+    if (input.clauses) content.clauses = input.clauses;
+    if (Object.keys(content).length) await d.documents.setContent(orgId, id, content);
     if (input.client !== undefined) {
       await d.documents.setClient(orgId, id, input.client?.name ?? null, {
         phone: input.client?.phone ?? null, email: input.client?.email ?? null, address: input.client?.address ?? null,
       });
     }
-    if (input.lines) await d.documents.setLines(orgId, id, toLines(input.lines, minor));
   }
 
   // ------------------------------------------------------------- profil et référentiels
@@ -126,6 +190,9 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
         phone: o.phone, email: o.email, address: o.address, legalIds: o.legal_ids, taxRegistered: o.tax_registered,
         taxCode: o.tax_code, brandColor: o.brand_color, hasLogo: Boolean(o.logo_key), templateCode: o.template_code,
         paymentMethods: o.payment_methods, footerNote: o.footer_note, status: o.status,
+        tradeLabel: o.trade_label, defaultValidityDays: o.default_validity_days,
+        defaultDeliveryText: o.default_delivery_text, defaultWarrantyText: o.default_warranty_text,
+        defaultDepositBp: o.default_deposit_bp,
       },
       currency: { code: currency.code, minorUnits: currency.minor_units, symbol: currency.symbol, symbolBefore: currency.symbol_before, thousandsSeparator: currency.thousands_separator, decimalSeparator: currency.decimal_separator },
       reference: {
@@ -147,15 +214,55 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
       name: "name", tradeCode: "trade_code", countryCode: "country_code", locale: "locale", phone: "phone", email: "email",
       address: "address", legalIds: "legal_ids", taxRegistered: "tax_registered", taxCode: "tax_code", brandColor: "brand_color",
       templateCode: "template_code", paymentMethods: "payment_methods", footerNote: "footer_note",
+      tradeLabel: "trade_label", defaultValidityDays: "default_validity_days", defaultDeliveryText: "default_delivery_text",
+      defaultWarrantyText: "default_warranty_text",
     };
     const patch: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(body)) {
+      // Acompte par défaut tapé en pourcentage (« 30 »).
+      if (k === "defaultDepositPercent") {
+        const bp = typeof v === "string" && v.trim() ? parsePercentBp(v) : null;
+        if (typeof v === "string" && v.trim() && (bp === null || bp > 10000)) throw httpErrors.validation({ [k]: "pourcentage invalide" });
+        patch.default_deposit_bp = bp;
+        continue;
+      }
       const key = map[k];
       if (!key) throw httpErrors.validation({ [k]: "champ inconnu" });
       patch[key] = v;
     }
     await sql(d.pool, "select app.update_profile($1, $2::jsonb)", [org(c), JSON.stringify(patch)]);
     return c.json({ ok: true });
+  });
+
+  // ------------------------------------------------------------- clauses (P-07)
+  app.get("/v1/portal/clauses", auth, async (c) => c.json({ items: await d.documents.clauses(org(c)) }));
+
+  const clauseSchema = z.object({
+    title: z.string().trim().max(120).nullable().optional(),
+    body: z.string().trim().min(1).max(600),
+    isDefault: z.boolean().optional(),
+    position: z.number().int().min(0).max(1000).optional(),
+  });
+  app.post("/v1/portal/clauses", auth, async (c) => {
+    const b = await parseJson(c, clauseSchema);
+    return c.json({ id: await d.documents.saveClause(org(c), null, b) }, 201);
+  });
+  app.put("/v1/portal/clauses/:id", auth, async (c) => {
+    const b = await parseJson(c, clauseSchema.partial().extend({ active: z.boolean().optional() }));
+    return c.json({ id: await d.documents.saveClause(org(c), c.req.param("id"), b) });
+  });
+
+  // ------------------------------------------------------------- numérotation (P-08)
+  app.get("/v1/portal/numbering", auth, async (c) => c.json({ items: await d.documents.numbering(org(c)) }));
+  app.put("/v1/portal/numbering/:type", auth, async (c) => {
+    const b = await parseJson(c, z.object({
+      prefix: z.string().regex(/^[A-Za-z0-9]{0,12}$/).optional(),
+      separator: z.enum(["-", "_", "/", "."]).optional(),
+      includeYear: z.boolean().optional(),
+      width: z.number().int().min(1).max(12).optional(),
+      cadence: z.enum(["annual", "continuous"]).optional(),
+    }));
+    return c.json(await d.documents.setNumbering(org(c), c.req.param("type"), b));
   });
 
   app.post("/v1/portal/logo", auth, async (c) => {
@@ -257,14 +364,29 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
 
   const action = (path: string, run: (orgId: string, id: string, body: any) => Promise<unknown>, schema: z.ZodType = z.object({}).passthrough()) =>
     app.post(`/v1/portal/documents/:id/${path}`, auth, async (c) => {
-      const body = path === "issue" || path === "revise" || path === "convert" || path === "cancel" || path === "share" ? {} : await parseJson(c, schema);
+      // Corps facultatif : un appel sans corps vaut « {} ».
+      const text = await c.req.text();
+      let raw: unknown = {};
+      if (text.trim()) {
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          throw httpErrors.badRequest("corps JSON attendu");
+        }
+      }
+      const body = parseWith(schema, raw);
       const result = await run(org(c), c.req.param("id"), body);
       return c.json(result ?? { ok: true });
     });
 
-  action("issue", async (o, id) => d.documents.issue(o, id));
+  // Émission (P-09) : numéro particulier facultatif, unique et audité.
+  action("issue", async (o, id, b) => d.documents.issue(o, id, b.number ?? null),
+    z.object({ number: z.string().trim().max(64).nullable().optional() }));
   action("revise", async (o, id) => ({ id: await d.documents.revise(o, id) }));
-  action("convert", async (o, id) => ({ id: await d.documents.convert(o, id) }));
+  // Conversion (P-11) : en proforma ou en facture.
+  action("convert", async (o, id, b) => ({ id: await d.documents.convert(o, id, b.type ?? "invoice") }),
+    z.object({ type: z.enum(["proforma", "invoice", "delivery_note"]).optional() }));
+  action("duplicate", async (o, id) => ({ id: await d.documents.duplicate(o, id) }));
   action("cancel", async (o, id) => {
     await d.documents.cancel(o, id);
     return { ok: true };
@@ -272,7 +394,7 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
   action("decision", async (o, id, b) => {
     await d.documents.decide(o, id, b.decision, b.note ?? null);
     return { ok: true };
-  }, z.object({ decision: z.enum(["accepted", "refused"]), note: z.string().max(500).nullable().optional() }));
+  }, z.object({ decision: z.enum(["accepted", "refused", "no_response"]), note: z.string().max(500).nullable().optional() }));
   action("share", async (o, id) => {
     await d.documents.share(o, id);
     await d.documents.markShared(o, id, "web");

@@ -113,7 +113,7 @@ describe.skipIf(!hasDatabase)("conversation de bout en bout (simulateur)", () =>
     await send("Menuiserie Afi");
     out = await replies();
     expect(out.at(-2)).toMatch(/au nom de « Menuiserie Afi »/);
-    expect(out.at(-1)).toMatch(/Devis DEV-\d{4}-0001 émis/);
+    expect(out.at(-1)).toMatch(/Devis DEV-\d{4}-001 émis/);
 
     await renderPending(first.orgId);
     out = await replies();
@@ -124,12 +124,12 @@ describe.skipIf(!hasDatabase)("conversation de bout en bout (simulateur)", () =>
     out = await replies();
     expect(out.at(-2)).toMatch(/Facture préparée à partir du devis DEV-/);
     await send("cmd:issue");
-    expect((await replies()).at(-1)).toMatch(/Facture FAC-\d{4}-0001 émis/);
+    expect((await replies()).at(-1)).toMatch(/Facture FAC-\d{4}-001 émis/);
 
     await send("payé 40 000 par Mobile Money");
     expect((await replies()).at(-1)).toMatch(/Paiement de 40 000 F CFA noté sur FAC-.*Reste à payer : 60 000 F CFA/s);
     await send("reçu");
-    expect((await replies()).at(-1)).toMatch(/Reçu REC-\d{4}-0001 émis/);
+    expect((await replies()).at(-1)).toMatch(/Reçu REC-\d{4}-001 émis/);
 
     await send("mes documents");
     const list = (await replies()).at(-1)!;
