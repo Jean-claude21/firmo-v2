@@ -1,0 +1,12 @@
+{
+  "name": "firmo",
+  "private": true,
+  "type": "module",
+  "description": "Firmo — outillage racine (base, politique Neon). L'API et le web ont leur propre package.",
+  "scripts": {
+    "db": "node db/scripts/firmo-db.mjs"
+  },
+  "devDependencies": {
+    "@neon/config": "^1.14.0"
+  }
+}

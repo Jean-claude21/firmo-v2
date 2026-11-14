@@ -73,6 +73,6 @@ SVG (aperçu web), PNG de la première page (aperçu dans le chat). Polices dans
 
 | Environnement | Base | API | Web |
 |---|---|---|---|
-| local | Postgres 17 local (`firmo-db local start`, port 54330), fichiers sur disque | `npm run dev` (:8787) | `npm run dev` (:3000) |
+| local | Postgres 17 local (`firmo-db local start`, port 54330), fichiers sur disque | `npm run dev` (:8790) | `npm run dev` (:3000) |
 | staging | branche Neon `staging` | Coolify `firmo-api-staging` | Coolify `firmo-web-staging` |
 | production | branche Neon `main` | Coolify `firmo-api` | Coolify `firmo-web` |
