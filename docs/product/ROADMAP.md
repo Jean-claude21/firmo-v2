@@ -6,7 +6,7 @@
 | Spec | Contenu | Fonctionnalités | État |
 |---|---|---|---|
 | 001-socle | Dépôt, outillage base (migrations, pgTAP), référentiels, organisations, identités, équipe, audit, file de tâches, liens, API Hono + worker, CI, Neon staging | CH-2, CH-5, ADM-1, ADM-5 (données) | ✅ 2026-11-14 |
-| 002-documents | Modèle documentaire en SQL : lignes, totaux, taxes, numérotation, transitions, paiements notés, quotas | DOC-3, DOC-4, DOC-6, DOC-7, OFF-2 | ⏳ |
+| 002-documents | Modèle documentaire en SQL : lignes, totaux, taxes, numérotation, transitions, paiements notés, reçus, essai et quotas | DOC-3, DOC-4, DOC-6, DOC-7, OFF-1 (essai), OFF-2 | ✅ 2026-11-14 |
 | 003-rendu | Typst : trois modèles, PDF, SVG, PNG, QR, montant en lettres, cas difficiles | DOC-5, DOC-8 | ⏳ |
 | 004-conversation | Canaux (simulateur, Telegram, WhatsApp), IA (transcription, lecture, intentions), moteur de conversation, voix | CH-1, CH-3, CH-4, DOC-1, DOC-2 | ⏳ |
 | 005-espace-artisan | Web : site, lien signé, tableau de bord, documents, clients, profil, formulaires, page publique | ART-1 à ART-5, ART-7, CH-4 | ⏳ |
