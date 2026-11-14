@@ -10,13 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AccesTokenRouteImport } from './routes/acces.$token'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminConfigurationRouteImport } from './routes/admin.configuration'
+import { Route as AdminConversationsRouteImport } from './routes/admin.conversations'
+import { Route as AdminEquipeRouteImport } from './routes/admin.equipe'
+import { Route as AdminIaRouteImport } from './routes/admin.ia'
+import { Route as AdminJournalRouteImport } from './routes/admin.journal'
+import { Route as AdminSimulateurRouteImport } from './routes/admin.simulateur'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAbonnementRouteImport } from './routes/app.abonnement'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppProfilRouteImport } from './routes/app.profil'
 import { Route as DTokenRouteImport } from './routes/d.$token'
+import { Route as AdminOrganisationsIndexRouteImport } from './routes/admin.organisations.index'
+import { Route as AdminOrganisationsIdRouteImport } from './routes/admin.organisations.$id'
 import { Route as AppDocumentsIndexRouteImport } from './routes/app.documents.index'
 import { Route as AppDocumentsIdRouteImport } from './routes/app.documents.$id'
 import { Route as AppDocumentsNouveauRouteImport } from './routes/app.documents.nouveau'
@@ -25,6 +35,11 @@ import { Route as PaiementSimulateurIdRouteImport } from './routes/paiement.simu
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -36,6 +51,41 @@ const AccesTokenRoute = AccesTokenRouteImport.update({
   id: '/acces/$token',
   path: '/acces/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConfigurationRoute = AdminConfigurationRouteImport.update({
+  id: '/configuration',
+  path: '/configuration',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConversationsRoute = AdminConversationsRouteImport.update({
+  id: '/conversations',
+  path: '/conversations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEquipeRoute = AdminEquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminIaRoute = AdminIaRouteImport.update({
+  id: '/ia',
+  path: '/ia',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminJournalRoute = AdminJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSimulateurRoute = AdminSimulateurRouteImport.update({
+  id: '/simulateur',
+  path: '/simulateur',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
@@ -62,6 +112,16 @@ const DTokenRoute = DTokenRouteImport.update({
   path: '/d/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOrganisationsIndexRoute = AdminOrganisationsIndexRouteImport.update({
+  id: '/organisations/',
+  path: '/organisations/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrganisationsIdRoute = AdminOrganisationsIdRouteImport.update({
+  id: '/organisations/$id',
+  path: '/organisations/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AppDocumentsIndexRoute = AppDocumentsIndexRouteImport.update({
   id: '/documents/',
   path: '/documents/',
@@ -85,92 +145,151 @@ const PaiementSimulateurIdRoute = PaiementSimulateurIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/acces/$token': typeof AccesTokenRoute
+  '/admin/configuration': typeof AdminConfigurationRoute
+  '/admin/conversations': typeof AdminConversationsRoute
+  '/admin/equipe': typeof AdminEquipeRoute
+  '/admin/ia': typeof AdminIaRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/simulateur': typeof AdminSimulateurRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/clients': typeof AppClientsRoute
   '/app/profil': typeof AppProfilRoute
   '/d/$token': typeof DTokenRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/admin/organisations/$id': typeof AdminOrganisationsIdRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
   '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
+  '/admin/organisations/': typeof AdminOrganisationsIndexRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/acces/$token': typeof AccesTokenRoute
+  '/admin/configuration': typeof AdminConfigurationRoute
+  '/admin/conversations': typeof AdminConversationsRoute
+  '/admin/equipe': typeof AdminEquipeRoute
+  '/admin/ia': typeof AdminIaRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/simulateur': typeof AdminSimulateurRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/clients': typeof AppClientsRoute
   '/app/profil': typeof AppProfilRoute
   '/d/$token': typeof DTokenRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/admin/organisations/$id': typeof AdminOrganisationsIdRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
   '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
+  '/admin/organisations': typeof AdminOrganisationsIndexRoute
   '/app/documents': typeof AppDocumentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/acces/$token': typeof AccesTokenRoute
+  '/admin/configuration': typeof AdminConfigurationRoute
+  '/admin/conversations': typeof AdminConversationsRoute
+  '/admin/equipe': typeof AdminEquipeRoute
+  '/admin/ia': typeof AdminIaRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/simulateur': typeof AdminSimulateurRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/clients': typeof AppClientsRoute
   '/app/profil': typeof AppProfilRoute
   '/d/$token': typeof DTokenRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/admin/organisations/$id': typeof AdminOrganisationsIdRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
   '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
+  '/admin/organisations/': typeof AdminOrganisationsIndexRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/app'
     | '/acces/$token'
+    | '/admin/configuration'
+    | '/admin/conversations'
+    | '/admin/equipe'
+    | '/admin/ia'
+    | '/admin/journal'
+    | '/admin/simulateur'
     | '/app/abonnement'
     | '/app/clients'
     | '/app/profil'
     | '/d/$token'
+    | '/admin/'
     | '/app/'
+    | '/admin/organisations/$id'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
     | '/paiement/simulateur/$id'
+    | '/admin/organisations/'
     | '/app/documents/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/acces/$token'
+    | '/admin/configuration'
+    | '/admin/conversations'
+    | '/admin/equipe'
+    | '/admin/ia'
+    | '/admin/journal'
+    | '/admin/simulateur'
     | '/app/abonnement'
     | '/app/clients'
     | '/app/profil'
     | '/d/$token'
+    | '/admin'
     | '/app'
+    | '/admin/organisations/$id'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
     | '/paiement/simulateur/$id'
+    | '/admin/organisations'
     | '/app/documents'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/app'
     | '/acces/$token'
+    | '/admin/configuration'
+    | '/admin/conversations'
+    | '/admin/equipe'
+    | '/admin/ia'
+    | '/admin/journal'
+    | '/admin/simulateur'
     | '/app/abonnement'
     | '/app/clients'
     | '/app/profil'
     | '/d/$token'
+    | '/admin/'
     | '/app/'
+    | '/admin/organisations/$id'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
     | '/paiement/simulateur/$id'
+    | '/admin/organisations/'
     | '/app/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   AccesTokenRoute: typeof AccesTokenRoute
   DTokenRoute: typeof DTokenRoute
@@ -186,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
@@ -199,6 +325,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/acces/$token'
       preLoaderRoute: typeof AccesTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/configuration': {
+      id: '/admin/configuration'
+      path: '/configuration'
+      fullPath: '/admin/configuration'
+      preLoaderRoute: typeof AdminConfigurationRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/conversations': {
+      id: '/admin/conversations'
+      path: '/conversations'
+      fullPath: '/admin/conversations'
+      preLoaderRoute: typeof AdminConversationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/equipe': {
+      id: '/admin/equipe'
+      path: '/equipe'
+      fullPath: '/admin/equipe'
+      preLoaderRoute: typeof AdminEquipeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ia': {
+      id: '/admin/ia'
+      path: '/ia'
+      fullPath: '/admin/ia'
+      preLoaderRoute: typeof AdminIaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/journal': {
+      id: '/admin/journal'
+      path: '/journal'
+      fullPath: '/admin/journal'
+      preLoaderRoute: typeof AdminJournalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/simulateur': {
+      id: '/admin/simulateur'
+      path: '/simulateur'
+      fullPath: '/admin/simulateur'
+      preLoaderRoute: typeof AdminSimulateurRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/app/': {
       id: '/app/'
@@ -235,6 +410,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/organisations/': {
+      id: '/admin/organisations/'
+      path: '/organisations'
+      fullPath: '/admin/organisations/'
+      preLoaderRoute: typeof AdminOrganisationsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/organisations/$id': {
+      id: '/admin/organisations/$id'
+      path: '/organisations/$id'
+      fullPath: '/admin/organisations/$id'
+      preLoaderRoute: typeof AdminOrganisationsIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/app/documents/': {
       id: '/app/documents/'
       path: '/documents'
@@ -266,6 +455,32 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminConfigurationRoute: typeof AdminConfigurationRoute
+  AdminConversationsRoute: typeof AdminConversationsRoute
+  AdminEquipeRoute: typeof AdminEquipeRoute
+  AdminIaRoute: typeof AdminIaRoute
+  AdminJournalRoute: typeof AdminJournalRoute
+  AdminSimulateurRoute: typeof AdminSimulateurRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminOrganisationsIdRoute: typeof AdminOrganisationsIdRoute
+  AdminOrganisationsIndexRoute: typeof AdminOrganisationsIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminConfigurationRoute: AdminConfigurationRoute,
+  AdminConversationsRoute: AdminConversationsRoute,
+  AdminEquipeRoute: AdminEquipeRoute,
+  AdminIaRoute: AdminIaRoute,
+  AdminJournalRoute: AdminJournalRoute,
+  AdminSimulateurRoute: AdminSimulateurRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminOrganisationsIdRoute: AdminOrganisationsIdRoute,
+  AdminOrganisationsIndexRoute: AdminOrganisationsIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface AppRouteChildren {
   AppAbonnementRoute: typeof AppAbonnementRoute
   AppClientsRoute: typeof AppClientsRoute
@@ -290,6 +505,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   AccesTokenRoute: AccesTokenRoute,
   DTokenRoute: DTokenRoute,

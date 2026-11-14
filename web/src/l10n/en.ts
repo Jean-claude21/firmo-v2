@@ -1,3 +1,4 @@
+import { adminEn } from "./admin-en";
 import type { Messages } from "./fr";
 
 export const en: Messages = {
@@ -284,7 +285,7 @@ export const en: Messages = {
   publicDoc: {
     from: "From",
     download: "Download PDF",
-    accept: "Accept the quote",
+    accept: "Accept",
     refuse: "Decline",
     note: "Message to the issuer",
     notePlaceholder: "E.g. Approved, work can start on Monday.",
@@ -301,4 +302,5 @@ export const en: Messages = {
     balance: "Balance due",
     poweredBy: "Made with Firmo",
   },
+  admin: adminEn,
 };

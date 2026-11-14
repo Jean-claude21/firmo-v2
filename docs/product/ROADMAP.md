@@ -11,7 +11,7 @@
 | 004-conversation | Canaux (simulateur, Telegram, WhatsApp), IA (transcription, lecture, intentions), garde anti-invention, moteur de conversation, voix | CH-1, CH-3, CH-4, CH-5, DOC-1, DOC-2 | ✅ 2026-11-14 |
 | 005-espace-artisan | Web : site, lien signé, tableau de bord, documents, clients, profil, formulaires, page publique | ART-1 à ART-5, ART-7, CH-4 | ✅ 2026-11-14 |
 | 006-offre | Essai, abonnement, quota, paiement (simulateur, Moneroo) | OFF-1, OFF-3, ART-6 | ✅ 2026-11-14 |
-| 007-administration | Console : tableau de bord, organisations, conversations, configuration, simulateur, coûts | ADM-1 à ADM-7 | ⏳ |
+| 007-administration | Console : tableau de bord, organisations, conversations, configuration, simulateur, coûts | ADM-1 à ADM-7 | ✅ 2026-11-14 |
 | 008-mise-en-ligne | Staging Neon + Coolify, bout en bout, suivi d'erreurs, analytics, documentation d'exploitation | IX | ⏳ |
 
 ## Ce que le porteur doit fournir (hors code)
