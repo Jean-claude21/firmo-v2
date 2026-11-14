@@ -4,7 +4,7 @@ import { hasDatabase, testPool, uid } from "./helpers/db.js";
 
 describe.skipIf(!hasDatabase)("documents sur Postgres", () => {
   const pool = testPool();
-  const docs = pgDocumentStore(pool);
+  const docs = pgDocumentStore(pool, { shareSecret: "secret-de-test-assez-long-pour-hmac" });
   afterAll(() => pool.end());
 
   async function org(): Promise<string> {

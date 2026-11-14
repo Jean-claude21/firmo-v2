@@ -1,7 +1,8 @@
 import type pg from "pg";
 import { type Db, sql, sqlOne, withTransaction } from "../lib/db.js";
 import { httpErrors } from "../lib/errors.js";
-import { newToken, tokenHash } from "../lib/session.js";
+import { tokenHash } from "../lib/session.js";
+import { shareToken } from "./share.js";
 import type { Currency } from "./money.js";
 
 // Accès aux documents. Toute règle (totaux, numéros, transitions, quota) est décidée en SQL ;
@@ -243,7 +244,7 @@ function isoDate(value: Date | string): string {
   return `${y}-${m}-${d}`;
 }
 
-export function pgDocumentStore(pool: pg.Pool): DocumentStore {
+export function pgDocumentStore(pool: pg.Pool, options: { shareSecret: string }): DocumentStore {
   const db: Db = pool;
 
   async function load(docId: string, orgId?: string): Promise<DocumentView> {
@@ -313,8 +314,9 @@ export function pgDocumentStore(pool: pg.Pool): DocumentStore {
       await sql(db, "select app.decide_document($1, $2, $3, $4)", [orgId, docId, decision, note]);
     },
     async share(orgId, docId) {
-      const { token, hash } = newToken(24);
-      const r = await sqlOne<{ expires: Date }>(db, "select app.share_document($1, $2, $3) as expires", [orgId, docId, hash]);
+      // Jeton dérivé (QR code, chat, web) ; la base n en garde que l empreinte.
+      const token = shareToken(options.shareSecret, docId);
+      const r = await sqlOne<{ expires: Date }>(db, "select app.share_document($1, $2, $3) as expires", [orgId, docId, tokenHash(token)]);
       return { token, expiresAt: r.expires.toISOString() };
     },
     async markShared(orgId, docId, via) {

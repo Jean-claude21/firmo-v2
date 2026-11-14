@@ -9,6 +9,8 @@ const schema = z.object({
   PORT: z.coerce.number().int().positive().default(8790),
   DATABASE_URL: z.string().min(1),
   FIRMO_SESSION_SECRET: z.string().min(32, "FIRMO_SESSION_SECRET : 32 caractères minimum"),
+  // Dérive les liens de partage des documents (QR code) ; le changer révoque tous les liens.
+  FIRMO_SHARE_SECRET: z.string().min(32, "FIRMO_SHARE_SECRET : 32 caractères minimum"),
   // Origines du web autorisées (CORS), séparées par des virgules.
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
   // Adresse publique du web (liens envoyés dans le chat) et de l'API (webhooks, fichiers).
