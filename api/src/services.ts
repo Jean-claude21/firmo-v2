@@ -1,7 +1,17 @@
 import type pg from "pg";
 import type { RouteModule } from "./app.js";
 import type { Config } from "./config.js";
+import { openAiReader } from "./ai/openai.js";
+import { rulesReader } from "./ai/rules.js";
+import type { AiReader } from "./ai/types.js";
+import { simulatorChannel } from "./channels/simulator.js";
+import { telegramChannel } from "./channels/telegram.js";
+import type { Channel } from "./channels/types.js";
+import { whatsappChannel } from "./channels/whatsapp.js";
+import { ConversationEngine } from "./conversation/engine.js";
+import { pgConversationStore } from "./conversation/store.js";
 import { pgDocumentStore, type DocumentStore } from "./documents/store.js";
+import { registerChannelRoutes } from "./routes/channels.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
 import { DocumentRenderer } from "./render/renderer.js";
@@ -25,6 +35,9 @@ export interface Services {
   documents: DocumentStore;
   files: ObjectStore;
   render: RenderService;
+  engine: ConversationEngine;
+  conversations: ReturnType<typeof pgConversationStore>;
+  reader: AiReader;
   startSchedules?: () => void;
   stopSchedules?: () => void;
 }
@@ -59,5 +72,42 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
   });
   worker.on("render_document", (job) => render.handleJob(job));
 
-  return { modules: [], documents, files, render };
+  // Conversation (spec 004). Sans clé OpenAI : lecture simplifiée, signalée à l'artisan.
+  const conversations = pgConversationStore(pool);
+  const reader: AiReader = config.OPENAI_API_KEY
+    ? openAiReader(config.OPENAI_API_KEY, (task) => conversations.aiModel(task))
+    : rulesReader();
+  const channels = new Map<string, Channel>();
+  channels.set("simulator", simulatorChannel(files, {
+    async record(to, kind, text, mediaKey, mediaType, buttons) {
+      const identity = await conversations.identityByExternal("simulator", to);
+      if (!identity) throw new Error("conversation du simulateur introuvable");
+      return conversations.recordOutbound(identity, kind, text, mediaKey, mediaType, null, null, buttons ?? null);
+    },
+  }));
+  if (config.TELEGRAM_BOT_TOKEN) channels.set("telegram", telegramChannel(config.TELEGRAM_BOT_TOKEN));
+  if (config.WHATSAPP_ACCESS_TOKEN && config.WHATSAPP_PHONE_NUMBER_ID) {
+    channels.set("whatsapp", whatsappChannel({
+      accessToken: config.WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId: config.WHATSAPP_PHONE_NUMBER_ID,
+      apiVersion: config.WHATSAPP_API_VERSION,
+      flows: config.WHATSAPP_FLOW_PROFILE_ID ? { profile: config.WHATSAPP_FLOW_PROFILE_ID } : {},
+    }));
+  }
+  const engine = new ConversationEngine({ store: conversations, documents, reader, channels, files, render, webUrl: config.WEB_URL });
+  worker.on("process_message", (job) => engine.handleJob(job));
+
+  const modules: RouteModule[] = [
+    (app) => registerChannelRoutes(app, {
+      store: conversations,
+      db: pool,
+      files,
+      signer: ctx.signer,
+      wake: () => worker.wake(),
+      telegram: config.TELEGRAM_BOT_TOKEN ? { token: config.TELEGRAM_BOT_TOKEN, secret: config.TELEGRAM_WEBHOOK_SECRET } : null,
+      whatsapp: config.WHATSAPP_APP_SECRET ? { appSecret: config.WHATSAPP_APP_SECRET, verifyToken: config.WHATSAPP_VERIFY_TOKEN } : null,
+    }),
+  ];
+
+  return { modules, documents, files, render, engine, conversations, reader };
 }

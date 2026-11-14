@@ -40,6 +40,9 @@ const schema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().default(""),
   WHATSAPP_APP_SECRET: z.string().default(""),
   WHATSAPP_VERIFY_TOKEN: z.string().default(""),
+  WHATSAPP_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
+  // Identifiant du Flow « profil » publié chez Meta (compte vérifié) ; vide : lien web.
+  WHATSAPP_FLOW_PROFILE_ID: z.string().default(""),
 
   // Paiement de l'abonnement.
   PAYMENTS_SIMULATOR_SECRET: z.string().default(""),
