@@ -14,6 +14,7 @@ import { pgDocumentStore, type DocumentStore } from "./documents/store.js";
 import { registerChannelRoutes } from "./routes/channels.js";
 import { registerPortalRoutes } from "./routes/portal.js";
 import { registerBillingRoutes } from "./routes/billing.js";
+import { registerAdminRoutes } from "./routes/admin.js";
 import { monerooProvider, type PaymentProvider, simulatorProvider } from "./billing/providers.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
@@ -107,6 +108,7 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
   if (config.FIRMO_ENV !== "production") providers.push(simulatorProvider());
 
   const modules: RouteModule[] = [
+    (app) => registerAdminRoutes(app, { pool, signer: ctx.signer, env: config.FIRMO_ENV, neonAuthUrl: config.NEON_AUTH_URL, webUrl: config.WEB_URL }),
     (app) => registerBillingRoutes(app, { pool, signer: ctx.signer, providers, apiUrl: config.API_URL, webUrl: config.WEB_URL, conversations }),
     (app) => registerPortalRoutes(app, { pool, signer: ctx.signer, documents, render, files, webUrl: config.WEB_URL }),
     (app) => registerChannelRoutes(app, {

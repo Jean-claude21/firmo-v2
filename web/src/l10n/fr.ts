@@ -1,4 +1,5 @@
 // Textes du web en français (langue de référence). Toute clé existe aussi en anglais (en.ts).
+import { adminFr } from "./admin-fr";
 
 export const fr = {
   meta: {
@@ -284,7 +285,7 @@ export const fr = {
   publicDoc: {
     from: "De la part de",
     download: "Télécharger le PDF",
-    accept: "Accepter le devis",
+    accept: "Accepter",
     refuse: "Refuser",
     note: "Message pour l'émetteur",
     notePlaceholder: "Ex. Bon pour accord, début des travaux lundi.",
@@ -301,6 +302,7 @@ export const fr = {
     balance: "Reste à payer",
     poweredBy: "Établi avec Firmo",
   },
+  admin: adminFr,
 };
 
 export type Messages = typeof fr;
