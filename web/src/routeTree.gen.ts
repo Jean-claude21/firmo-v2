@@ -20,6 +20,7 @@ import { Route as DTokenRouteImport } from './routes/d.$token'
 import { Route as AppDocumentsIndexRouteImport } from './routes/app.documents.index'
 import { Route as AppDocumentsIdRouteImport } from './routes/app.documents.$id'
 import { Route as AppDocumentsNouveauRouteImport } from './routes/app.documents.nouveau'
+import { Route as PaiementSimulateurIdRouteImport } from './routes/paiement.simulateur.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const AppDocumentsNouveauRoute = AppDocumentsNouveauRouteImport.update({
   path: '/documents/nouveau',
   getParentRoute: () => AppRoute,
 } as any)
+const PaiementSimulateurIdRoute = PaiementSimulateurIdRouteImport.update({
+  id: '/paiement/simulateur/$id',
+  path: '/paiement/simulateur/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
+  '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
+  '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
   '/app/documents': typeof AppDocumentsIndexRoute
 }
 export interface FileRoutesById {
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
+  '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
 }
 export interface FileRouteTypes {
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
+    | '/paiement/simulateur/$id'
     | '/app/documents/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
+    | '/paiement/simulateur/$id'
     | '/app/documents'
   id:
     | '__root__'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
+    | '/paiement/simulateur/$id'
     | '/app/documents/'
   fileRoutesById: FileRoutesById
 }
@@ -162,6 +174,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AccesTokenRoute: typeof AccesTokenRoute
   DTokenRoute: typeof DTokenRoute
+  PaiementSimulateurIdRoute: typeof PaiementSimulateurIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsNouveauRouteImport
       parentRoute: typeof AppRoute
     }
+    '/paiement/simulateur/$id': {
+      id: '/paiement/simulateur/$id'
+      path: '/paiement/simulateur/$id'
+      fullPath: '/paiement/simulateur/$id'
+      preLoaderRoute: typeof PaiementSimulateurIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -273,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AccesTokenRoute: AccesTokenRoute,
   DTokenRoute: DTokenRoute,
+  PaiementSimulateurIdRoute: PaiementSimulateurIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

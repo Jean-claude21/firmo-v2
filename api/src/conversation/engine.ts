@@ -543,6 +543,23 @@ export class ConversationEngine {
     await this.say(t, t.w.portalLink(this.portalUrl(token), minutes));
   }
 
+  /** Tâche `notify_subscription` : l'artisan apprend dans son chat que son abonnement est actif. */
+  async notifySubscription(job: Job): Promise<void> {
+    const orgId = String(job.payload.org_id ?? "");
+    const ok = job.payload.outcome === "succeeded";
+    const ctx = await this.d.store.context(orgId);
+    const w = chatWords(ctx.locale);
+    const ent = await this.d.documents.entitlement(orgId);
+    const until = ent?.periodEnd ? ent.periodEnd.slice(0, 10).split("-").reverse().join("/") : "";
+    for (const id of await this.d.store.identities(orgId)) {
+      const channel = this.d.channels.get(id.channel);
+      if (!channel) continue;
+      const text = ok ? w.subscriptionActive(ent?.quota ?? 0, until) : w.subscriptionFailed;
+      const r = await channel.sendText(id.to, text);
+      await this.logOut(channel, id.identityId, "text", text, null, null, r.externalId);
+    }
+  }
+
   /** Rendu prêt : aperçu, PDF et lien envoyés à chaque identité qui attendait ce document. */
   private async deliver(doc: DocumentView, files: RenderedFiles): Promise<void> {
     const pending = await this.d.store.pendingDeliveries(doc.id);

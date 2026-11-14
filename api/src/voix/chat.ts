@@ -65,6 +65,8 @@ export interface ChatWords {
   error: string;
   revised: (number: string) => string;
   typeChanged: (label: string) => string;
+  subscriptionActive: (quota: number, until: string) => string;
+  subscriptionFailed: string;
 }
 
 function lineText(l: DraftLineView, w: { price: string; qty: string }): string {
@@ -143,6 +145,8 @@ const fr: ChatWords = {
   error: "Un problème est survenu de mon côté. Réessaie dans un instant.",
   revised: (n) => `${n} est déjà émis : j'en ai fait un nouveau brouillon que tu peux corriger.`,
   typeChanged: (l) => `C'est maintenant : ${l}.`,
+  subscriptionActive: (q, until) => `🎉 Merci ! Ton abonnement est actif jusqu'au ${until} : ${q} documents. Envoie ta prochaine vente.`,
+  subscriptionFailed: "Le paiement de ton abonnement n'a pas abouti. Tu peux réessayer depuis ton espace (« réglages »).",
 };
 
 const en: ChatWords = {
@@ -202,6 +206,8 @@ const en: ChatWords = {
   error: "Something went wrong on my side. Please try again shortly.",
   revised: (n) => `${n} is already issued: I made a new draft you can correct.`,
   typeChanged: (l) => `It is now: ${l}.`,
+  subscriptionActive: (q, until) => `🎉 Thank you! Your subscription is active until ${until}: ${q} documents. Send your next sale.`,
+  subscriptionFailed: "Your subscription payment did not go through. You can try again from your space (\"settings\").",
 };
 
 export function chatWords(locale: string): ChatWords {
