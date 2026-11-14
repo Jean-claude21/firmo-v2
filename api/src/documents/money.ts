@@ -104,3 +104,14 @@ export function minorToMajorString(minor: bigint | string, minorUnits: number): 
   const frac = (v % factor).toString().padStart(minorUnits, "0").replace(/0+$/, "");
   return frac ? `${v / factor}.${frac}` : (v / factor).toString();
 }
+
+/**
+ * Pourcentage tapé ou dit (« 25 », « 12,5 % », « 150 ») → centièmes de point (2500, 1250, 15000).
+ * Au plus deux décimales ; au-delà de 100 % admis (majoration) ; null si illisible ou nul.
+ */
+export function parsePercentBp(text: string): number | null {
+  const m = /^\s*(\d{1,5})(?:[.,](\d{1,2}))?\s*%?\s*$/.exec(text);
+  if (!m) return null;
+  const bp = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0") || 0);
+  return bp > 0 && bp <= 1_000_000 ? bp : null;
+}

@@ -30,7 +30,7 @@ describe.skipIf(!hasDatabase)("documents sur Postgres", () => {
     await docs.setClient(orgId, draft, "École Les Palmiers", { phone: "+22890000009" });
     const issued = await docs.issue(orgId, draft);
     expect(issued.status).toBe("issued");
-    expect(issued.number).toMatch(/^DEV-\d{4}-0001$/);
+    expect(issued.number).toMatch(/^DEV-\d{4}-001$/);
     expect(issued.totalMinor).toBe("100000");
     expect(issued.lines[0]?.toConfirm).toEqual([]);
     expect(issued.client.name).toBe("École Les Palmiers");

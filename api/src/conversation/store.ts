@@ -27,7 +27,7 @@ export interface OrgContext {
   locale: string;
   currency: Currency;
   trade: string | null;
-  units: Array<{ code: string; label: string }>;
+  units: Array<{ code: string; label: string; short: string }>;
   template: string;
 }
 
@@ -124,9 +124,9 @@ export function pgConversationStore(pool: pg.Pool) {
          left join public.trades t on t.code = o.trade_code where o.id = $1`,
         [orgId],
       );
-      const units = await sql<{ code: string; label: string }>(
+      const units = await sql<{ code: string; label: string; short: string }>(
         pool,
-        "select code, app.label(labels, $1) as label from public.units order by position",
+        "select code, app.label(labels, $1) as label, app.label(short_labels, $1) as short from public.units order by position",
         [r.locale],
       );
       return {

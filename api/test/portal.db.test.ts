@@ -67,7 +67,7 @@ describe.skipIf(!hasDatabase)("espace artisan et page publique", () => {
         { label: "Câble 2,5 mm²", quantity: "50", unit: "m", unitPrice: "750" },
         { label: "Main d'œuvre", quantity: "2", unit: "day", unitPrice: "25 000" },
       ],
-      discount: { percent: "5" },
+      adjustments: [{ label: "Remise", mode: "percent", sign: -1, value: "5" }],
     });
     expect(created.status).toBe(201);
     expect(created.body.totalMinor).toBe("83125");
@@ -109,5 +109,63 @@ describe.skipIf(!hasDatabase)("espace artisan et page publique", () => {
     expect(clients.body.items[0].name).toBe("Clinique Saint-Luc");
     const list = await call("GET", "/v1/portal/documents?type=invoice");
     expect(list.body.total).toBe(1);
+  }, 60_000);
+
+  it("document v1 par le web : sections, ajustements, acompte, clauses, numérotation, numéro manuel, lignée", async () => {
+    const r = await pool.query<{ org_id: string }>("select org_id from app.ensure_identity('simulator', $1, null, '+22890000000', null)", [uid("web-v1")]);
+    token = await signer.sign({ scope: "org", orgId: r.rows[0]!.org_id }, 3600);
+    expect((await call("PATCH", "/v1/portal/profile", {
+      name: "Atelier Kodjo", tradeLabel: "Chaudronnerie - Soudure", defaultValidityDays: 15,
+      defaultDeliveryText: "21 jours après acompte", defaultDepositPercent: "30",
+    })).status).toBe(200);
+    expect((await call("PATCH", "/v1/portal/profile", { defaultDepositPercent: "130" })).status).toBe(422);
+    const clause = await call("POST", "/v1/portal/clauses", { body: "Garantie de 24 mois sur les soudures.", isDefault: true });
+    expect(clause.status).toBe(201);
+    expect((await call("GET", "/v1/portal/clauses")).body.items).toHaveLength(1);
+
+    const numbering = await call("PUT", "/v1/portal/numbering/quote", { prefix: "DV", separator: "/", width: 4 });
+    expect(numbering.body.preview).toMatch(/^DV\/\d{4}\/0001$/);
+    expect((await call("PUT", "/v1/portal/numbering/quote", { prefix: "D V" })).status).toBe(422);
+
+    const created = await call("POST", "/v1/portal/documents", {
+      type: "quote", title: "Portail et garde-corps", site: "Adidogomé",
+      sections: [
+        { title: "Portail", lines: [
+          { label: "Tube 80 x 40", quantity: "12", unit: "barre", unitPrice: "18 000" },
+          { label: "Tôle 20/10", quantity: "4", unit: "feuille", unitPrice: "32000" }] },
+        { title: "Garde-corps", lines: [
+          { label: "Fabrication", kind: "flat", flatAmount: "156 000" },
+          { label: "Teinte au choix du client", kind: "text" }] },
+      ],
+      adjustments: [
+        { label: "Main-d'œuvre", mode: "percent", value: "25" },
+        { label: "Transport", mode: "amount", value: "30 000" },
+      ],
+    });
+    expect(created.status).toBe(201);
+    const doc = created.body;
+    expect(doc.sections.map((s: any) => s.subtotalMinor)).toEqual(["344000", "156000"]);
+    expect(doc.totalMinor).toBe("655000");
+    expect(doc.depositMinor).toBe("196500");
+    expect(doc.validityDays).toBe(15);
+    expect(doc.deliveryText).toBe("21 jours après acompte");
+    expect(doc.clauses.map((c: any) => c.body)).toEqual(["Garantie de 24 mois sur les soudures."]);
+    const bad = await call("PUT", `/v1/portal/documents/${doc.id}`, { adjustments: [{ label: "X", mode: "percent", value: "beaucoup" }] });
+    expect(bad.status).toBe(422);
+
+    const issued = await call("POST", `/v1/portal/documents/${doc.id}/issue`, { number: "KODJO-MAIRIE-1" });
+    expect(issued.body.number).toBe("KODJO-MAIRIE-1");
+    expect(issued.body.manualNumber).toBe(true);
+    const proforma = await call("POST", `/v1/portal/documents/${doc.id}/convert`, { type: "proforma" });
+    const pro = await call("GET", `/v1/portal/documents/${proforma.body.id}`);
+    expect(pro.body.type).toBe("proforma");
+    expect(pro.body.sourceNumber).toBe("KODJO-MAIRIE-1");
+    const dup = await call("POST", `/v1/portal/documents/${doc.id}/duplicate`);
+    const copy = await call("GET", `/v1/portal/documents/${dup.body.id}`);
+    expect(copy.body.status).toBe("draft");
+    expect(copy.body.totalMinor).toBe("655000");
+    expect((await call("POST", `/v1/portal/documents/${copy.body.id}/issue`)).body.number).toMatch(/^DV\/\d{4}\/0001$/);
+    expect((await call("POST", `/v1/portal/documents/${doc.id}/decision`, { decision: "no_response" })).status).toBe(200);
+    expect((await call("GET", `/v1/portal/documents/${doc.id}`)).body.status).toBe("no_response");
   }, 60_000);
 });

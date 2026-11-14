@@ -26,7 +26,8 @@ export type Command =
   | { type: "template"; template: "classic" | "modern" | "clean" }
   | { type: "revise"; number: string | null };
 
-const NUMBER = /\b([A-Z]{1,6}-\d{4}-\d{4})\b/i;
+// Numéro de document : format configurable ou manuel (DEV-2026-001, D/00002, FAC-MAIRIE-7, DEV-2026-001/R2).
+const NUMBER = /(?<![A-Za-z0-9])([A-Za-z]{1,12}[-_\/.][A-Za-z0-9_.\/-]*[0-9][A-Za-z0-9]*(?:\/R[0-9]+)?)(?![A-Za-z0-9])/;
 
 function norm(text: string): string {
   return text

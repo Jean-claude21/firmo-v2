@@ -47,7 +47,7 @@ describe.skipIf(!hasDatabase)("rendu à l'émission", () => {
     expect(files.files.get(current!.pdfKey)?.type).toBe("application/pdf");
     expect(files.files.get(current!.pngKey)?.body.length).toBeGreaterThan(1000);
     expect(seen).toHaveLength(1);
-    expect(seen[0]).toMatch(/^FAC-\d{4}-0001:1$/);
+    expect(seen[0]).toMatch(/^FAC-\d{4}-001:1$/);
     // Le lien du QR code ouvre bien le document.
     const token = render.shareLink(id).split("/d/")[1]!;
     expect((await documents.publicDocument(token)).id).toBe(id);

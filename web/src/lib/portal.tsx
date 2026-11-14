@@ -75,9 +75,12 @@ export interface DocumentLine {
   position: number;
   label: string;
   quantity: string | null;
+  sectionPosition: number;
+  kind: "priced" | "flat" | "text";
+  description: string | null;
   unit: string | null;
-  unitLabel: string | null;
   unitPriceMinor: string | null;
+  flatAmountMinor: string | null;
   lineTotalMinor: string | null;
   toConfirm: string[];
 }
@@ -91,13 +94,14 @@ export interface DocumentDetail extends DocumentSummary {
   client: { id: string | null; name: string | null; phone: string | null; email: string | null; address: string | null };
   issuer: Record<string, unknown> | null;
   expired: boolean;
-  discountBp: number | null;
-  discountMinor: string | null;
   applyTax: boolean;
   taxLabel: string | null;
   taxRateBp: number;
   subtotalMinor: string;
-  discountTotalMinor: string;
+  adjustmentsTotalMinor: string;
+  depositMinor: string | null;
+  sections: Array<{ position: number; title: string | null; showSubtotal: boolean; subtotalMinor: string }>;
+  adjustments: Array<{ position: number; label: string; mode: "percent" | "amount"; sign: 1 | -1; base: string; sectionPosition: number | null; rateBp: number | null; valueMinor: string | null; amountMinor: string | null }>;
   taxMinor: string;
   sourceNumber: string | null;
   acceptable: boolean;

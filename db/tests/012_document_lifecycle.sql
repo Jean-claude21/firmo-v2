@@ -48,7 +48,7 @@ select throws_ok(format('select app.cancel_document(%L, %L)', :'org', :'inv'), '
 
 -- Reçu.
 select app.issue_receipt(:'org', :'p1') as rec \gset
-select is((select number from public.documents where id = :'rec'), 'REC-' || extract(year from current_date)::int || '-0001', 'reçu numéroté');
+select is((select number from public.documents where id = :'rec'), 'REC-' || extract(year from current_date)::int || '-001', 'reçu numéroté');
 select is((select total_minor from public.documents where id = :'rec'), 40000::bigint, 'montant du reçu');
 select is(app.issue_receipt(:'org', :'p1'), :'rec'::uuid, 'un seul reçu par paiement');
 select is((select used from app.entitlement(:'org')), 2, 'reçu sans consommation (devis + facture seulement)');

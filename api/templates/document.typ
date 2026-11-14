@@ -1,322 +1,290 @@
-// Gabarit des documents Firmo (DOC-5, DOC-8). Un seul fichier, trois modèles : classic, modern,
-// clean. Les données arrivent préparées par api/src/render/model.ts (montants déjà formatés,
-// libellés dans la langue de l'artisan) : ce gabarit ne calcule rien.
+// Gabarit du document Firmo — direction validée de la v1 (docs/design/DESIGN.md, PARITE_V1 P-20 à P-27).
+// Le document argumente : entête, filet couleur, destinataire / cadre, objet, détail par sections,
+// totaux avec le total général dans le bloc couleur, conditions, bon pour accord.
+// Achromatique : la couleur de l'artisan n'occupe que le monogramme, le filet, la barre de l'objet
+// et le bloc du total. Aucun calcul ici : montants, dates et libellés arrivent formatés (SQL + API).
 
 #let data = json(bytes(sys.inputs.data))
-#let style = data.style
-#let c = data.colors
 #let L = data.labels
-#let brand = rgb(c.brand)
-#let on-brand = rgb(c.onBrand)
-#let accent = rgb(c.accent)
-#let tint = rgb(c.tint)
-#let ink = rgb(c.ink)
-#let muted = rgb(c.muted)
-#let hair = rgb(c.line)
 
-#let sans = ("Inter",)
-#let serif = ("Source Serif 4", "Inter")
-#let title-font = if style == "classic" { serif } else { sans }
-// Nom très long : plus petit, pour rester sur deux lignes.
-#let name-scale = if data.issuer.name.len() > 42 { 0.8 } else { 1 }
+#let ink = rgb("#181A1B")
+#let muted = rgb("#656A6C")
+#let hairline = rgb("#D9DDDC")
+#let soft = rgb("#F4F5F3")
+#let accent = rgb(data.issuer.accent)
+#let accent-ink = rgb(data.issuer.accent_ink)
 
-#set document(title: data.doc.kind + " " + data.doc.number, author: data.issuer.name)
-#set text(font: sans, size: 9.2pt, fill: ink, lang: data.lang)
-#set par(leading: 0.55em)
+#let present(value) = {
+  if value == none { false }
+  else if type(value) == str { value.trim() != "" }
+  else if type(value) == array { value.len() > 0 }
+  else { true }
+}
+
+#let unit-mark(color: muted) = text(size: 7pt, fill: color)[#data.currency.symbol]
+#let money(value, color: muted) = if data.currency.before [#unit-mark(color: color) #value] else [#value #unit-mark(color: color)]
+
+#let eyebrow(body) = text(font: "JetBrains Mono", size: 6.7pt, weight: 600, fill: muted, tracking: 0.04em, body)
+#let label(body) = text(font: "JetBrains Mono", size: 6.5pt, weight: 600, fill: muted, tracking: 0.04em, body)
+#let figure-text(body, weight: 400, size: 7.6pt) = text(font: "JetBrains Mono", size: size, weight: weight, body)
+
+#let columns-spec = (1fr, 20mm, 25mm, 28mm)
+#let header-row() = grid(
+  columns: columns-spec,
+  column-gutter: 2mm,
+  inset: (y: 2.2mm),
+  align: (left, right, right, right),
+  stroke: (bottom: 0.7pt + hairline),
+  label(L.designation), label(L.qty), label(L.unit_price), label(L.amount),
+)
+
 #set page(
   paper: "a4",
-  margin: (top: 16mm, bottom: 22mm, x: 16mm),
-  // Modèle moderne : bandeau de couleur pleine largeur, première page seulement.
-  background: if style == "modern" {
-    context if counter(page).get().first() == 1 {
-      place(top + left, rect(width: 100%, height: 42mm, fill: brand))
+  margin: (x: 18mm, top: 16mm, bottom: 15mm),
+  foreground: if data.draft {
+    align(center + horizon)[
+      #rotate(-24deg, text(font: "JetBrains Mono", size: 22pt, weight: 700,
+        fill: rgb("#D7DBD8").transparentize(22%))[#L.draft_mark])
+    ]
+  },
+  header: context {
+    if counter(page).get().first() > 1 {
+      set text(font: "JetBrains Mono", size: 6.8pt, fill: muted)
+      grid(columns: (1fr, auto), align: (left, right), [#data.issuer.name], [#data.type · #data.number])
+      v(2mm)
+      line(length: 100%, stroke: 0.6pt + hairline)
+      header-row()
     }
   },
-  footer: context [
-    #set text(size: 7.2pt, fill: muted)
-    #line(length: 100%, stroke: 0.4pt + hair)
-    #v(-1mm)
-    #grid(
+  footer: context {
+    set text(size: 6.8pt, fill: muted)
+    grid(
       columns: (1fr, auto),
-      align: (left + horizon, right + horizon),
-      [#data.footer.legal],
-      [#data.footer.brand · #counter(page).display("1 / 1", both: true)],
+      align: (left, right),
+      [#data.issuer.name#for l in data.issuer.legal [ · #l.label #l.value]],
+      [#data.number · #counter(page).display("1 / 1", both: true)],
     )
+  },
+)
+
+#set text(font: "Inter Tight", size: 9pt, fill: ink, lang: data.lang)
+#set par(leading: 0.62em)
+
+// ---------------------------------------------------------------- 1. entête
+#grid(
+  columns: (14mm, 1fr, auto),
+  column-gutter: 4mm,
+  align: (left, horizon),
+  if data.issuer.logo {
+    box(width: 14mm, height: 14mm, inset: 0pt)[#image("assets/logo.png", width: 14mm, height: 14mm, fit: "contain")]
+  } else {
+    box(width: 14mm, height: 14mm, fill: accent, inset: 0pt)[
+      #align(center + horizon)[#text(size: 10pt, weight: 700, fill: accent-ink)[#data.issuer.mark]]
+    ]
+  },
+  [
+    #if present(data.issuer.name) [#text(size: 14pt, weight: 700)[#data.issuer.name]]
+    #let contact = (data.issuer.trade, data.issuer.phone).filter(present)
+    #if contact.len() > 0 [
+      #v(-1pt)
+      #text(size: 8pt, fill: muted)[#contact.join([ · ])]
+    ]
+    #let more = (data.issuer.email, data.issuer.address).filter(present)
+    #if more.len() > 0 [
+      #v(0.5pt)
+      #text(size: 7pt, fill: muted)[#more.join([ · ])]
+    ]
+  ],
+  align(right)[
+    #eyebrow(upper(data.type))
+    #v(1.5pt)
+    #text(font: "JetBrains Mono", size: 9pt, weight: 700)[#data.number]
+    #if present(data.date) [
+      #v(1pt)
+      #text(size: 7.5pt, fill: muted)[#L.issued_on #data.date]
+    ]
   ],
 )
 
-// ---------------------------------------------------------------- éléments
-
-#let logo-box(height) = if data.issuer.logo {
-  image("/assets/logo.png", height: height, fit: "contain")
-}
-
-#let issuer-lines(fill) = {
-  set text(fill: fill)
-  for l in data.issuer.lines { [#l \ ] }
-}
-
-#let doc-meta(fill: ink, label-fill: muted) = {
-  set text(fill: fill)
-  grid(
-    columns: (auto, auto),
-    column-gutter: 4mm,
-    row-gutter: 1.6mm,
-    align: (right, left),
-    ..data.doc.meta.filter(m => not (style == "clean" and m.key == "number")).map(m => (text(fill: label-fill, size: 8pt, m.label), text(weight: "semibold", m.value))).flatten(),
-  )
-}
-
-// Tampon de statut (accepté, payé…) : dans le flux, sous l'en-tête, jamais par-dessus.
-#let stamp() = if data.doc.stamp != none {
-  v(3mm)
-  align(right, rotate(-4deg, reflow: true, box(
-    stroke: 1.4pt + rgb(data.doc.stampColor),
-    inset: (x: 3mm, y: 1.6mm),
-    radius: 2pt,
-    text(fill: rgb(data.doc.stampColor), weight: "bold", size: 10.5pt, tracking: 1pt, data.doc.stamp),
-  )))
-  v(-6mm)
-}
-
-#let draft-mark() = if data.doc.draft {
-  place(center + horizon, rotate(-30deg, text(size: 72pt, weight: "bold", fill: rgb(0, 0, 0, 14), L.draft)))
-}
-
-// ---------------------------------------------------------------- en-tête
-
-#let header-classic() = {
-  block(
-    width: 100%,
-    stroke: (bottom: 1.2pt + brand),
-    inset: (bottom: 4mm),
-    grid(
-      columns: (1fr, auto),
-      column-gutter: 8mm,
-      [
-        #grid(
-          columns: if data.issuer.logo { (auto, 1fr) } else { (1fr,) },
-          column-gutter: 4mm,
-          ..(if data.issuer.logo { (logo-box(18mm),) } else { () }),
-          [
-            #text(font: serif, size: 15pt * name-scale, weight: "bold", data.issuer.name) \
-            #if data.issuer.trade != none { text(fill: muted, size: 8.5pt, style: "italic", data.issuer.trade) } \
-            #v(1mm)
-            #text(size: 8.4pt, issuer-lines(muted))
-          ],
-        )
-      ],
-      align(right)[
-        #text(font: serif, size: 22pt, weight: "bold", fill: accent, tracking: 0.5pt, upper(data.doc.kind)) \
-        #v(2mm)
-        #doc-meta()
-      ],
-    ),
-  )
-}
-
-#let header-modern() = {
-  // Le bandeau (42 mm) est dessiné en arrière-plan de la page ; ici, son contenu (30 mm utiles).
-  block(
-    width: 100%,
-    height: 24mm,
-    grid(
-      columns: (1fr, auto),
-      column-gutter: 8mm,
-      align: horizon,
-      [
-        #grid(
-          columns: if data.issuer.logo { (auto, 1fr) } else { (1fr,) },
-          column-gutter: 4mm,
-          align: horizon,
-          ..(if data.issuer.logo {
-            (box(fill: white, inset: 2mm, radius: 3pt, logo-box(14mm)),)
-          } else { () }),
-          [
-            #text(fill: on-brand, size: 16pt * name-scale, weight: "bold", data.issuer.name) \
-            #if data.issuer.trade != none { text(fill: on-brand.transparentize(20%), size: 8.5pt, data.issuer.trade) }
-          ],
-        )
-      ],
-      align(right)[
-        #text(fill: on-brand, size: 24pt, weight: "bold", upper(data.doc.kind))
-      ],
-    ),
-  )
-  v(12mm)
-  grid(
-    columns: (1fr, auto),
-    column-gutter: 8mm,
-    text(size: 8.4pt, issuer-lines(muted)),
-    doc-meta(),
-  )
-  v(2mm)
-}
-
-#let header-clean() = {
-  grid(
-    columns: (1fr, auto),
-    column-gutter: 8mm,
-    [
-      #if data.issuer.logo { logo-box(13mm); v(3mm) }
-      #text(size: 12.5pt * name-scale, weight: "semibold", data.issuer.name) \
-      #if data.issuer.trade != none { text(fill: muted, size: 8.5pt, data.issuer.trade) } \
-      #v(1.5mm)
-      #text(size: 8.2pt, issuer-lines(muted))
-    ],
-    align(right)[
-      #text(size: 9pt, fill: accent, weight: "semibold", tracking: 2pt, upper(data.doc.kind)) \
-      #v(1mm)
-      #text(size: 20pt, weight: "regular", data.doc.number) \
-      #v(2mm)
-      #doc-meta()
-    ],
-  )
-  v(4mm)
-  line(length: 100%, stroke: 0.4pt + hair)
-}
-
-// ---------------------------------------------------------------- corps
-
-#let client-block() = {
-  let left = if data.client != none {
-    block(
-      width: 100%,
-      inset: if style == "clean" { 0mm } else { 3.5mm },
-      radius: 3pt,
-      fill: if style == "modern" { tint } else { none },
-      stroke: if style == "classic" { 0.6pt + hair } else { none },
-      [
-        #text(size: 7.6pt, fill: muted, weight: "semibold", tracking: 0.8pt, upper(L.client)) \
-        #v(0.6mm)
-        #text(size: 10.5pt, weight: "semibold", data.client.name) \
-        #set text(size: 8.4pt, fill: muted)
-        #for l in data.client.lines { [#l \ ] }
-      ],
-    )
-  }
-  let right = if data.doc.title != none {
-    block(
-      width: 100%,
-      inset: if style == "clean" { 0mm } else { 3.5mm },
-      [
-        #text(size: 7.6pt, fill: muted, weight: "semibold", tracking: 0.8pt, upper(L.subject)) \
-        #v(0.6mm)
-        #text(size: 10pt, data.doc.title)
-      ],
-    )
-  }
-  if left != none or right != none {
-    grid(columns: (1fr, 1fr), column-gutter: 6mm, left, right)
-    v(5mm)
-  }
-}
-
-#let receipt-block() = if data.receipt != none {
-  block(
-    width: 100%,
-    inset: 5mm,
-    radius: 4pt,
-    fill: tint,
-    [
-      #text(size: 11pt, data.receipt.text) \
-      #v(2mm)
-      #text(size: 20pt, weight: "bold", fill: accent, data.receipt.amount)
-      #if data.receipt.method != none [  #v(1mm) #text(fill: muted, data.receipt.method) ]
-    ],
-  )
-  v(5mm)
-}
-
-#let lines-table() = if data.receipt == none {
-  let head-fill = if style == "modern" { brand } else if style == "classic" { tint } else { none }
-  let head-text = if style == "modern" { on-brand } else { ink }
-  let row-stroke = if style == "classic" { 0.5pt + hair } else { none }
-  if data.currencyNote != none {
-    align(right, text(size: 7.6pt, fill: muted, data.currencyNote))
-    v(-2mm)
-  }
-  table(
-    columns: (7mm, 1fr, 15mm, 13mm, 25mm, 27mm),
-    align: (center + top, left + top, right + top, left + top, right + top, right + top),
-    inset: (x: 2mm, y: 2.4mm),
-    stroke: (x, y) => if style == "classic" { row-stroke } else if y == 0 { none } else { (bottom: 0.4pt + hair) },
-    fill: (x, y) => if y == 0 { head-fill } else if style == "modern" and calc.even(y) { tint.transparentize(40%) } else { none },
-    table.header(
-      ..L.columns.map(h => text(fill: head-text, size: 7.8pt, weight: "semibold", h)),
-    ),
-    ..data.rows.map(r => (
-      text(fill: muted, r.n),
-      [#r.label#if r.detail != none [ \ #text(size: 7.6pt, fill: muted, r.detail)]],
-      r.qty,
-      text(fill: muted, r.unit),
-      r.price,
-      text(weight: "medium", r.total),
-    )).flatten(),
-  )
-}
-
-#let totals-block() = {
-  let rows = data.totals.map(t => (
-    text(fill: if t.strong { ink } else { muted }, weight: if t.strong { "semibold" } else { "regular" }, t.label),
-    text(weight: if t.strong { "bold" } else { "medium" }, size: if t.strong { 11pt } else { 9.2pt }, fill: if t.strong and style != "classic" { accent } else { ink }, t.value),
-  )).flatten()
-  align(right, block(
-    width: 78mm,
-    inset: if style == "clean" { 0mm } else { 3.5mm },
-    radius: 3pt,
-    fill: if style == "modern" { tint } else { none },
-    stroke: if style == "classic" { 0.8pt + accent } else { none },
-    grid(columns: (1fr, auto), row-gutter: 2.2mm, column-gutter: 4mm, align: (left, right), ..rows),
-  ))
-}
-
-#let closing() = {
-  v(4mm)
-  if data.words != none {
-    text(size: 8.6pt, style: "italic", data.words)
-    v(4mm)
-  }
-  let blocks = ()
-  if data.paymentMethods != none {
-    blocks.push(block(width: 100%, [
-      #text(size: 7.6pt, fill: muted, weight: "semibold", tracking: 0.8pt, upper(L.paymentMethods)) \
-      #v(0.6mm)
-      #text(size: 8.6pt, data.paymentMethods)
-    ]))
-  }
-  if data.notes != none {
-    blocks.push(block(width: 100%, [
-      #text(size: 7.6pt, fill: muted, weight: "semibold", tracking: 0.8pt, upper(L.notes)) \
-      #v(0.6mm)
-      #text(size: 8.6pt, data.notes)
-    ]))
-  }
-  if data.footerNote != none {
-    blocks.push(text(size: 8pt, fill: muted, data.footerNote))
-  }
-  grid(
-    columns: if data.qr { (1fr, 26mm) } else { (1fr,) },
-    column-gutter: 6mm,
-    stack(spacing: 4mm, ..blocks),
-    ..(if data.qr {
-      (align(center)[
-        #image("/assets/qr.svg", width: 22mm)
-        #text(size: 6.6pt, fill: muted, data.qrCaption)
-      ],)
-    } else { () }),
-  )
-}
-
-// ---------------------------------------------------------------- page
-
-#draft-mark()
-#if style == "classic" { header-classic() } else if style == "modern" { header-modern() } else { header-clean() }
-#stamp()
+// ---------------------------------------------------------------- 2. filet
 #v(6mm)
-#client-block()
-#receipt-block()
-#lines-table()
+#rect(width: 28mm, height: 1.4pt, fill: accent)
+#v(6mm)
+
+// ---------------------------------------------------------------- 3. destinataire / cadre
+#let has-client = data.client != none
+#let has-frame = data.frame.len() > 0
+#if has-client or has-frame {
+  grid(
+    columns: if has-client and has-frame { (1fr, 1fr) } else { (1fr,) },
+    column-gutter: 16mm,
+    ..if has-client {
+      ([
+        #label(L.recipient)
+        #v(2.2pt)
+        #text(size: 11pt, weight: 600)[#data.client.name]
+        #for detail in data.client.details [
+          #v(1pt)
+          #text(size: 8pt, fill: muted)[#detail]
+        ]
+      ],)
+    } else { () },
+    ..if has-frame {
+      ([
+        #label(L.frame)
+        #v(2.2pt)
+        #grid(
+          columns: (auto, 1fr),
+          column-gutter: 3mm,
+          row-gutter: 2.2mm,
+          ..data.frame.map(f => (text(size: 7.5pt, fill: muted)[#f.label], text(size: 7.5pt, weight: 600)[#f.value])).flatten(),
+        )
+      ],)
+    } else { () },
+  )
+  v(6mm)
+}
+
+// ---------------------------------------------------------------- 4. objet
+#if present(data.object) or present(data.summary) {
+  block(width: 100%, fill: soft, stroke: (left: 2pt + accent), inset: (x: 4mm, y: 3.2mm))[
+    #if present(data.object) [
+      #label(L.object)
+      #v(2pt)
+      #text(size: 12.5pt, weight: 700)[#data.object]
+    ]
+    #if present(data.summary) [
+      #v(2pt)
+      #text(size: 8pt, fill: muted)[#data.summary]
+    ]
+  ]
+  v(6mm)
+}
+
+// ---------------------------------------------------------------- 5. détail
+#header-row()
+#for section in data.sections {
+  if section.title != none {
+    v(3.5mm)
+    grid(columns: (1fr, auto), align: (left, right), text(size: 8pt, weight: 700)[#section.title], eyebrow(L.section))
+    v(1.2mm)
+  }
+  for line in section.lines {
+    grid(
+      columns: columns-spec,
+      column-gutter: 2mm,
+      inset: (y: 2.5mm),
+      align: (left, right, right, right),
+      stroke: (bottom: 0.45pt + hairline),
+      [
+        #text(size: 8.5pt, weight: 500)[#line.label]
+        #if present(line.description) [
+          #v(0.8pt)
+          #text(size: 7.2pt, fill: muted)[#line.description]
+        ]
+      ],
+      if present(line.qty) { text(size: 7.8pt)[#line.qty] } else { [] },
+      if present(line.unit_price) { figure-text(line.unit_price, size: 7.4pt) } else { [] },
+      if present(line.amount) { figure-text(line.amount, weight: 600, size: 7.8pt) } else { [] },
+    )
+  }
+  if section.subtotal != none {
+    grid(
+      columns: (1fr, auto),
+      inset: (top: 1.8mm),
+      align: (left, right),
+      label(section.subtotal_label),
+      figure-text(money(section.subtotal), weight: 600, size: 7.8pt),
+    )
+  }
+}
+
+// ---------------------------------------------------------------- 6. conditions et totaux
+#v(5mm)
+#grid(
+  columns: (1fr, 72mm),
+  column-gutter: 10mm,
+  [
+    #for block-item in data.notes [
+      #label(block-item.title)
+      #v(2mm)
+      #for item in block-item.items {
+        grid(columns: (3mm, 1fr), [#text(fill: accent)[•]], text(size: 7.7pt, fill: muted)[#item])
+        v(1.2mm)
+      }
+      #v(2.5mm)
+    ]
+  ],
+  [
+    #if data.totals.before.len() > 0 {
+      grid(
+        columns: (1fr, auto),
+        row-gutter: 2.2mm,
+        align: (left, right),
+        ..data.totals.before.map(t => (text(size: 8pt, fill: muted)[#t.label], figure-text(money(t.value), size: 7.8pt))).flatten(),
+      )
+      v(3mm)
+    }
+    #block(width: 100%, fill: accent, inset: (x: 4mm, y: 3.5mm))[
+      #grid(
+        columns: (1fr, auto),
+        align: (left + horizon, right + horizon),
+        text(size: 8pt, weight: 600, fill: accent-ink)[#data.totals.label],
+        text(font: "JetBrains Mono", size: 13pt, weight: 700, fill: accent-ink)[#money(data.totals.value, color: accent-ink)],
+      )
+    ]
+    #if data.totals.after.len() > 0 {
+      v(2.5mm)
+      grid(
+        columns: (1fr, auto),
+        row-gutter: 1.8mm,
+        align: (left, right),
+        ..data.totals.after.map(t => (
+          text(size: 7.7pt, fill: if t.strong { ink } else { muted }, weight: if t.strong { 600 } else { 400 })[#t.label],
+          figure-text(money(t.value), weight: if t.strong { 600 } else { 400 }, size: 7.6pt),
+        )).flatten(),
+      )
+    }
+  ],
+)
+
+#if present(data.words) [
+  #v(3mm)
+  #text(size: 7.2pt, fill: muted)[#data.words]
+]
+
+// ---------------------------------------------------------------- 7. pied
+#v(1fr)
+#block(breakable: false)[
+#line(length: 100%, stroke: 0.6pt + hairline)
 #v(3mm)
-#totals-block()
-#closing()
+#grid(
+  columns: if data.qr { (1fr, 1fr, 30mm) } else { (1fr, 1fr) },
+  column-gutter: 8mm,
+  [
+    #label(L.signature)
+    #v(2pt)
+    #text(size: 7pt, fill: muted)[#L.signature_hint]
+  ],
+  align(right)[
+    #label(L.issuer)
+    #v(2pt)
+    #text(size: 7pt, fill: muted)[#data.issuer.name]
+    #for l in data.issuer.legal [
+      #v(1pt)
+      #text(size: 6.5pt, fill: muted)[#l.label #l.value]
+    ]
+    #if present(data.issuer.footer_note) [
+      #v(1pt)
+      #text(size: 6.5pt, fill: muted)[#data.issuer.footer_note]
+    ]
+  ],
+  ..if data.qr {
+    (align(right)[
+      #label(L.qr)
+      #v(2pt)
+      #image("assets/qr.svg", width: 11mm)
+    ],)
+  } else { () },
+)
+]

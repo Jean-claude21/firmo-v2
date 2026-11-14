@@ -51,7 +51,9 @@ export function frenchWords(value: bigint): string {
     n %= size;
     if (count === 0n) continue;
     if (size === 1_000n) {
-      parts.push(count === 1n ? "mille" : `${frenchWords(count).replace(/s$/, "")} mille`);
+      // « mille » est invariable et « cents » / « quatre-vingts » perdent leur s devant lui ;
+      // les autres mots gardent le leur (« trois mille »).
+      parts.push(count === 1n ? "mille" : `${frBelow1000(Number(count), false)} mille`);
     } else {
       parts.push(`${frenchWords(count)} ${count === 1n ? one : many}`);
     }

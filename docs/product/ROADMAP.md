@@ -1,6 +1,7 @@
 # Roadmap — Firmo
 
 > État réel du projet. Chaque spec terminée est cochée et datée.
+> Parité avec la v1 exigée par le porteur le 2026-11-14 : `PARITE_V1.md` (liste vérifiable).
 > Hypothèses produit : considérées validées par le porteur le 2026-11-14 (voir `HYPOTHESES.md`).
 
 | Spec | Contenu | Fonctionnalités | État |
@@ -13,6 +14,12 @@
 | 006-offre | Essai, abonnement, quota, paiement (simulateur, Moneroo) | OFF-1, OFF-3, ART-6 | ✅ 2026-11-14 |
 | 007-administration | Console : tableau de bord, organisations, conversations, configuration, simulateur, coûts | ADM-1 à ADM-7 | ✅ 2026-11-14 |
 | 008-mise-en-ligne | Staging Neon + Coolify (https://firmo-staging.kete.digital), image unique, Doppler, documentation d'exploitation | IX | ✅ staging 2026-11-14 · production à ouvrir |
+| 009-document-v1 | Parité v1 du document et du PDF : sections, ajustements, acompte, champs latents, clauses, numérotation configurable, numéro manuel, révisions /R2, conversion, duplication, consultations ; gabarit validé de la v1, dix cas de référence | PARITE_V1 P-01 à P-27, P-43 | ✅ 2026-11-14 |
+| 010-conversation-v1 | Parité v1 du chat : intentions, corrections sur tout le document avec preuve, contexte de 12 échanges, messages de la voix v1, aperçu filigrané, évaluation de dialogues | PARITE_V1 P-30 à P-42 | ⬜ |
+| 011-offre-v1 | 30 documents par mois, recharges, alerte à 80 %, versions d'offre, périodes, Chariow, file de confirmation | PARITE_V1 P-50 à P-57 | ⬜ |
+| 012-web-v1 | Site, espace artisan et pages légales aux maquettes validées de la v1 | PARITE_V1 P-60 à P-69 | ⬜ |
+| 013-admin-v1 | Centre de commande, incidents, organisation, listes, actions sensibles, accès admin par le chat | PARITE_V1 P-70 à P-78 | ⬜ |
+| 014-mesure-v1 | PostHog, rétention des médias, export et suppression des données | PARITE_V1 P-80 à P-83 | ⬜ |
 
 ## Ce que le porteur doit fournir (hors code)
 
