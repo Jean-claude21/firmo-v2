@@ -12,6 +12,7 @@ import { ConversationEngine } from "./conversation/engine.js";
 import { pgConversationStore } from "./conversation/store.js";
 import { pgDocumentStore, type DocumentStore } from "./documents/store.js";
 import { registerChannelRoutes } from "./routes/channels.js";
+import { registerPortalRoutes } from "./routes/portal.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
 import { DocumentRenderer } from "./render/renderer.js";
@@ -98,6 +99,7 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
   worker.on("process_message", (job) => engine.handleJob(job));
 
   const modules: RouteModule[] = [
+    (app) => registerPortalRoutes(app, { pool, signer: ctx.signer, documents, render, files, webUrl: config.WEB_URL }),
     (app) => registerChannelRoutes(app, {
       store: conversations,
       db: pool,

@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/source-serif-4/600.css";
+@import "@fontsource/source-serif-4/700.css";
+
+/* Jetons du design (docs/design/DESIGN.md). */
+@theme {
+  --color-ink: #14213d;
+  --color-ink-soft: #2a3a5c;
+  --color-amber: #e9a23b;
+  --color-amber-text: #9a5b0b;
+  --color-amber-soft: #fdf3e2;
+  --color-paper: #faf8f4;
+  --color-surface: #ffffff;
+  --color-line: #e7e3db;
+  --color-muted: #5f5e5a;
+  --color-ok: #067647;
+  --color-ok-soft: #e7f5ee;
+  --color-warn: #b54708;
+  --color-warn-soft: #fef3e6;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdeceb;
+  --color-info: #1d4ed8;
+  --color-info-soft: #e8efff;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+
+  --radius-field: 10px;
+  --radius-card: 16px;
+  --shadow-card: 0 1px 2px rgb(20 33 61 / 0.05), 0 4px 16px rgb(20 33 61 / 0.04);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-amber);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)];
+  }
+  .field {
+    @apply min-h-11 w-full rounded-[var(--radius-field)] border border-line bg-surface px-3 py-2 text-[15px] text-ink placeholder:text-muted/70 focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 disabled:bg-paper;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-md bg-line/70;
+  }
+}
