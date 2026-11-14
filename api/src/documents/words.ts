@@ -104,7 +104,9 @@ export function amountInWords(minor: bigint, minorUnits: number, locale: string)
   const words = en ? englishWords : frenchWords;
   const main = words(major);
   if (minorUnits === 0 || fraction === 0n) return main;
-  return en ? `${main} and ${words(fraction)} cents` : `${main} et ${words(fraction)} centimes`;
+  return en
+    ? `${main} and ${fraction.toString().padStart(minorUnits, "0")}/${factor}`
+    : `${main} et ${words(fraction)} centimes`;
 }
 
 // ---------------------------------------------------------------- lecture (fr)
