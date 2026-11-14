@@ -13,6 +13,8 @@ import { pgConversationStore } from "./conversation/store.js";
 import { pgDocumentStore, type DocumentStore } from "./documents/store.js";
 import { registerChannelRoutes } from "./routes/channels.js";
 import { registerPortalRoutes } from "./routes/portal.js";
+import { registerBillingRoutes } from "./routes/billing.js";
+import { monerooProvider, type PaymentProvider, simulatorProvider } from "./billing/providers.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
 import { DocumentRenderer } from "./render/renderer.js";
@@ -97,8 +99,15 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
   }
   const engine = new ConversationEngine({ store: conversations, documents, reader, channels, files, render, webUrl: config.WEB_URL });
   worker.on("process_message", (job) => engine.handleJob(job));
+  worker.on("notify_subscription", (job) => engine.notifySubscription(job));
+
+  // Paiement de l'abonnement (spec 006) : simulateur hors production, Moneroo dès que la clé existe.
+  const providers: PaymentProvider[] = [];
+  if (config.MONEROO_SECRET_KEY) providers.push(monerooProvider({ secretKey: config.MONEROO_SECRET_KEY, webhookSecret: config.MONEROO_WEBHOOK_SECRET }));
+  if (config.FIRMO_ENV !== "production") providers.push(simulatorProvider());
 
   const modules: RouteModule[] = [
+    (app) => registerBillingRoutes(app, { pool, signer: ctx.signer, providers, apiUrl: config.API_URL, webUrl: config.WEB_URL, conversations }),
     (app) => registerPortalRoutes(app, { pool, signer: ctx.signer, documents, render, files, webUrl: config.WEB_URL }),
     (app) => registerChannelRoutes(app, {
       store: conversations,

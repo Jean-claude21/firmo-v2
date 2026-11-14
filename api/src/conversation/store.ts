@@ -177,6 +177,16 @@ export function pgConversationStore(pool: pg.Pool) {
       return rows.map((r) => ({ id: r.id, identityId: r.identity_id, channel: r.channel, to: r.external_id }));
     },
 
+    /** Identités de messagerie d'une organisation (la plus récente d'abord). */
+    async identities(orgId: string): Promise<Array<{ identityId: string; channel: string; to: string }>> {
+      const rows = await sql<{ id: string; channel: string; external_id: string }>(
+        pool,
+        "select id, channel, external_id from public.channel_identities where org_id = $1 order by last_seen_at desc",
+        [orgId],
+      );
+      return rows.map((r) => ({ identityId: r.id, channel: r.channel, to: r.external_id }));
+    },
+
     async markDelivered(id: string) {
       await sql(pool, "update public.document_deliveries set delivered_at = now() where id = $1", [id]);
     },
