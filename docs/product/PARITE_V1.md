@@ -49,23 +49,23 @@ Légende : ✅ fait et vérifié · ⬜ à faire · ➕ la v2 fait plus que la v
 | P-26 | Mentions RCCM / NIF / mentions libres de l'émetteur et NIF du client, seulement si remplis | rendu | ✅ |
 | P-27 | Les dix cas rendus en PDF + PNG, relus | `test/__output__/cases` | ✅ |
 
-## 3. Conversation (spec 010)
+## 3. Conversation (spec 010 ✅)
 
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
-| P-30 | Vocal principal, photo, texte ; la liste lue est **toujours montrée avant composition** (sections, ajustements, total provisoire, détails) | test conversation | ⬜ |
-| P-31 | **Corrections en langage naturel** sur tout le document : lignes, sections, ajustements, champs (objet, client, chantier, délai, validité, garantie, TVA, acompte, conditions), paiements ; tout nombre corrigé exige sa **preuve textuelle** | tests + garde | ⬜ |
-| P-32 | Une question à la fois, sur le premier champ manquant | test | ⬜ |
-| P-33 | Seule question au premier document : « Sous quel nom doit partir ce devis ? » | test | ⬜ |
-| P-34 | Intentions : salutation, admin, confirmer, finaliser, aperçu, réglages, dernier document, télécharger le dernier, liste, quota, abonnement, statistiques, recherche, conversion, duplication, partage, nouveau document, aide, nouvelle source, autre | test par intention | ⬜ |
-| P-35 | **Contexte de 12 échanges** + brouillon structuré durable | test | ⬜ |
-| P-36 | Un brouillon actif par conversation ; « nouveau » l'abandonne et en ouvre un autre | test | ⬜ |
-| P-37 | Aperçu PDF filigrané gratuit dans le chat, puis émission confirmée (consomme 1 document) | test | ⬜ |
-| P-38 | Messages de `voix.md` (tutoiement, sans point d'exclamation, mots bannis) : accusé de réception, panne, limite, rien à montrer | test des mots bannis | ⬜ |
-| P-39 | Mode dégradé réel : IA indisponible → brouillon conservé, saisie `quantité \| libellé \| prix` | test | ⬜ |
-| P-40 | Webhooks idempotents, reprise, réponse livrée conservée | test | ⬜ |
-| P-41 | **Évaluation de dialogues** : artisan, BTP complexe, facture informelle + « télécharge le dernier », plus de 12 échanges | script + rapport | ⬜ |
-| P-42 | Demande de suppression des données depuis le chat (« Je demande la suppression de mes données ») | test | ⬜ |
+| P-30 | Vocal principal, photo, texte ; la liste lue est **toujours montrée avant composition** (sections, ajustements, total provisoire, détails) | test conversation | ✅ |
+| P-31 | **Corrections en langage naturel** sur tout le document : lignes, sections, ajustements, champs (objet, client, chantier, délai, validité, garantie, TVA, acompte, conditions), paiements ; tout nombre corrigé exige sa **preuve textuelle** | tests + garde | ✅ |
+| P-32 | Une question à la fois, sur le premier champ manquant | test | ✅ |
+| P-33 | Seule question au premier document : « Sous quel nom doit partir ce devis ? » | test | ✅ |
+| P-34 | Intentions : salutation, admin, confirmer, finaliser, aperçu, réglages, dernier document, télécharger le dernier, liste, quota, abonnement, statistiques, recherche, conversion, duplication, partage, nouveau document, aide, nouvelle source, autre | test par intention | ✅ |
+| P-35 | **Contexte de 12 échanges** + brouillon structuré durable | test | ✅ |
+| P-36 | Un brouillon actif par conversation ; « nouveau » l'abandonne et en ouvre un autre | test | ✅ |
+| P-37 | Aperçu PDF filigrané gratuit dans le chat, puis émission confirmée (consomme 1 document) | test | ✅ |
+| P-38 | Messages de `voix.md` (tutoiement, sans point d'exclamation, mots bannis) : accusé de réception, panne, limite, rien à montrer | test des mots bannis | ✅ |
+| P-39 | Mode dégradé réel : IA indisponible → brouillon conservé, saisie `quantité \| libellé \| prix` | test | ✅ |
+| P-40 | Webhooks idempotents, reprise, réponse livrée conservée | test | ✅ |
+| P-41 | **Évaluation de dialogues** : artisan, BTP complexe, facture informelle + « télécharge le dernier », plus de 12 échanges | script + rapport | ✅ |
+| P-42 | Demande de suppression des données depuis le chat (« Je demande la suppression de mes données ») | test | ✅ |
 | P-43 | Mémoire des postes habituels : libellé + dernier prix **constaté**, jamais suggéré | pgTAP | ✅ |
 
 ## 4. Offre et paiement (spec 011)

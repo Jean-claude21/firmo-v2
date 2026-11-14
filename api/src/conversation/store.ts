@@ -260,6 +260,39 @@ export function pgConversationStore(pool: pg.Pool) {
       const m = await sqlOne<{ minutes: number }>(pool, "select (app.setting('portal_link_minutes') #>> '{}')::int as minutes");
       return { token, minutes: m.minutes };
     },
+
+    /**
+     * Contexte de la conversation (P-35) : les 12 derniers échanges complets, du plus ancien au plus
+     * récent, sans le message en cours. Un vocal compte pour sa transcription.
+     */
+    async history(identityId: string, beforeMessageId: string, exchanges = 12): Promise<Array<{ role: "user" | "firmo"; text: string }>> {
+      const rows = await sql<{ direction: string; text: string }>(
+        pool,
+        `select direction, text from (
+           select m.direction, coalesce(m.transcript, m.text) as text, m.created_at
+           from public.messages m
+           where m.identity_id = $1 and m.id <> $2
+             and coalesce(m.transcript, m.text) is not null and m.kind <> 'form'
+             and m.created_at <= (select created_at from public.messages where id = $2)
+           order by m.created_at desc limit $3
+         ) x order by created_at`,
+        [identityId, beforeMessageId, exchanges * 2],
+      );
+      return rows.map((r) => ({ role: r.direction === "in" ? "user" as const : "firmo" as const, text: r.text.slice(0, 1500) }));
+    },
+
+    async requestData(orgId: string, identityId: string | null, kind: "deletion" | "export", origin: "chat" | "web"): Promise<string> {
+      return (await sqlOne<{ id: string }>(pool, "select app.request_data($1, $2, $3, $4) as id", [orgId, identityId, kind, origin])).id;
+    },
+
+    async stats(orgId: string): Promise<{ drafts: number; issued: number; quotes: number; invoices: number; accepted: number }> {
+      return (await sqlOne<{ s: { drafts: number; issued: number; quotes: number; invoices: number; accepted: number } }>(pool, "select app.org_chat_stats($1) as s", [orgId])).s;
+    },
+
+    /** Événement produit (METRICS.md) : jamais de nom, de téléphone, de prix ni de contenu. */
+    async emit(orgId: string, name: string, props: Record<string, unknown> = {}) {
+      await sql(pool, "select app.emit($1, $2, $3::jsonb)", [name, orgId, JSON.stringify(props)]);
+    },
   };
 }
 
