@@ -28,7 +28,7 @@ jobs:
           node-version: 24
       - name: Client PostgreSQL
         run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
-      - name: Migrations (deux fois : idempotence des empreintes)
+      - name: "Migrations, deux fois (empreintes stables)"
         run: |
           node db/scripts/firmo-db.mjs migrate --neon-shims
           node db/scripts/firmo-db.mjs migrate
