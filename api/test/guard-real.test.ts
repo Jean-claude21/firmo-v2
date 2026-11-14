@@ -24,12 +24,11 @@ describe("valeurs dites autrement", () => {
       ],
       text,
       0,
-      new Set(["unit", "lump_sum"]),
     );
-    expect(r.lines.map((l) => [l.quantity, l.unitPriceMinor])).toEqual([
-      ["1", "450000"],
-      ["4", "35000"],
-      ["1", "15000"],
+    expect(r.lines.map((l) => [l.kind, l.quantity, l.unitPriceMinor ?? l.flatAmountMinor])).toEqual([
+      ["flat", null, "450000"],
+      ["priced", "4", "35000"],
+      ["flat", null, "15000"],
     ]);
   });
 });

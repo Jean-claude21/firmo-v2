@@ -4,7 +4,9 @@
 export type Command =
   | { type: "start" }
   | { type: "help" }
-  | { type: "issue" }
+  | { type: "confirm" }
+  | { type: "finalize" }
+  | { type: "intent"; intent: "new_document" | "subscription" | "admin" | "quota" | "preview" | "stats" }
   | { type: "cancel" }
   | { type: "edit_hint" }
   | { type: "list" }
@@ -23,7 +25,6 @@ export type Command =
   | { type: "title"; text: string | null }
   | { type: "discount"; value: string | null }
   | { type: "tax"; enabled: boolean }
-  | { type: "template"; template: "classic" | "modern" | "clean" }
   | { type: "revise"; number: string | null };
 
 // Numéro de document : format configurable ou manuel (DEV-2026-001, D/00002, FAC-MAIRIE-7, DEV-2026-001/R2).
@@ -40,7 +41,7 @@ function norm(text: string): string {
 }
 
 /** Identifiants des boutons du chat (WhatsApp, Telegram). */
-export const BUTTONS = { issue: "cmd:issue", edit: "cmd:edit", cancel: "cmd:cancel", list: "cmd:list", settings: "cmd:settings" } as const;
+export const BUTTONS = { issue: "cmd:issue", preview: "cmd:preview", edit: "cmd:edit", cancel: "cmd:cancel", list: "cmd:list", settings: "cmd:settings" } as const;
 
 export function parseCommand(raw: string): Command | null {
   const original = raw.trim();
@@ -50,7 +51,9 @@ export function parseCommand(raw: string): Command | null {
 
   switch (t) {
     case BUTTONS.issue:
-      return { type: "issue" };
+      return { type: "confirm" };
+    case BUTTONS.preview:
+      return { type: "intent", intent: "preview" };
     case BUTTONS.edit:
       return { type: "edit_hint" };
     case BUTTONS.cancel:
@@ -63,9 +66,18 @@ export function parseCommand(raw: string): Command | null {
 
   if (/^\/start\b/.test(t)) return { type: "start" };
   if (/^(\/help|aide|help|\?|comment ca marche|menu)$/.test(t)) return { type: "help" };
-  if (/^(ok|okay|oui|yes|valide|valider|je valide|emets|emettre|issue|c'est bon|cest bon|go|d'accord|daccord|parfait|envoie|envoyer|confirme|confirmer)[ .!]*$/.test(t)) {
-    return { type: "issue" };
+  // « OK » répond à ce que Firmo vient de proposer (aperçu, puis PDF final) : jamais une émission directe.
+  if (/^(ok|okay|oui|yes|valide|valider|je valide|c'est bon|cest bon|c'est juste|cest juste|go|d'accord|daccord|parfait|confirme|confirmer|vas-y|vas y)[ .!]*$/.test(t)) {
+    return { type: "confirm" };
   }
+  if (/^(emets|emettre|emet|issue|finalise|finaliser|pdf final|le pdf final)[ .!]*$/.test(t)) return { type: "finalize" };
+  // Mots-clés de la v1 (voix : « réponds ABONNEMENT ou RECHARGE »).
+  if (/^(nouveau|nouveau devis|nouvelle facture|new|start over)[ .!]*$/.test(t)) return { type: "intent", intent: "new_document" };
+  if (/^(abonnement|recharge|recharger|subscribe|top up)[ .!]*$/.test(t)) return { type: "intent", intent: "subscription" };
+  if (/^(admin|administration)[ .!]*$/.test(t)) return { type: "intent", intent: "admin" };
+  if (/^(quota|mon quota)[ .!?]*$/.test(t)) return { type: "intent", intent: "quota" };
+  if (/^(apercu|l'apercu|voir l'apercu|preview)[ .!]*$/.test(t)) return { type: "intent", intent: "preview" };
+  if (/^(stats|statistiques|mes stats)[ .!]*$/.test(t)) return { type: "intent", intent: "stats" };
   if (/^(annule|annuler|supprime le brouillon|cancel|delete draft|stop)[ .!]*$/.test(t)) return { type: "cancel" };
   if (/^(corriger|modifier|edit|correct)[ .!]*$/.test(t)) return { type: "edit_hint" };
   if (/^(mes documents|documents|liste|historique|my documents|list|history)[ .!]*$/.test(t)) return { type: "list" };
@@ -117,11 +129,6 @@ export function parseCommand(raw: string): Command | null {
   if (discount) return { type: "discount", value: discount[1]!.trim() };
   if (/^(sans|pas de|no|without)\s+(tva|taxe|taxes|vat|tax)[ .!]*$/.test(t)) return { type: "tax", enabled: false };
   if (/^(avec|with|ajoute la|add)\s+(tva|taxe|taxes|vat|tax)[ .!]*$/.test(t)) return { type: "tax", enabled: true };
-  const template = /^(?:modele|template|style)\s+(classique|classic|moderne|modern|epure|clean)[ .!]*$/.exec(t);
-  if (template) {
-    const v = template[1]!;
-    return { type: "template", template: v.startsWith("class") ? "classic" : v.startsWith("mod") ? "modern" : "clean" };
-  }
   return null;
 }
 
