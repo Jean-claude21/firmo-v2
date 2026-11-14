@@ -13,12 +13,14 @@ describe.skipIf(!hasDatabase)("abonnement", () => {
   const signer = sessionSigner("s".repeat(40));
   // Moneroo factice : page de paiement et vérification simulées par un faux serveur.
   const verified: Record<string, unknown> = {};
+  // Identifiant Moneroo unique par exécution (la base de test locale garde les événements).
+  const monId = `mon_${Date.now().toString(36)}`;
   const fakeFetch = (async (url: string, init?: RequestInit) => {
     if (url.endsWith("/v1/payments/initialize")) {
       const body = JSON.parse(String(init?.body));
       verified.metadata = body.metadata;
       verified.amount = body.amount;
-      return new Response(JSON.stringify({ data: { id: "mon_123", checkout_url: "https://checkout.moneroo.test/mon_123" } }), { status: 201 });
+      return new Response(JSON.stringify({ data: { id: monId, checkout_url: `https://checkout.moneroo.test/${monId}` } }), { status: 201 });
     }
     if (url.includes("/verify")) {
       return new Response(JSON.stringify({ data: { status: "success", amount: verified.amount, currency: { code: "XOF" }, metadata: verified.metadata } }));
@@ -61,10 +63,10 @@ describe.skipIf(!hasDatabase)("abonnement", () => {
     expect((await call(token, "POST", "/v1/billing/checkout", { planCode: "standard", provider: "moneroo" })).status).toBe(422);
     const res = await call(token, "POST", "/v1/billing/checkout", { planCode: "standard", provider: "moneroo", email: "artisan@example.test" }, { "Idempotency-Key": uid("k") });
     const checkout = await res.json();
-    expect(checkout.checkoutUrl).toBe("https://checkout.moneroo.test/mon_123");
+    expect(checkout.checkoutUrl).toBe(`https://checkout.moneroo.test/${monId}`);
     expect(verified.amount).toBe(2000);
 
-    const raw = JSON.stringify({ event: "payment.success", data: { id: "mon_123" } });
+    const raw = JSON.stringify({ event: "payment.success", data: { id: monId } });
     const bad = await app.request("/v1/billing/webhooks/moneroo", { method: "POST", body: raw, headers: { "x-moneroo-signature": "faux" } });
     expect(bad.status).toBe(401);
     const sig = createHmac("sha256", "whsec").update(raw).digest("hex");
