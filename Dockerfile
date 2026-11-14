@@ -21,6 +21,8 @@ ENV VITE_WHATSAPP_NUMBER=$VITE_WHATSAPP_NUMBER VITE_TELEGRAM_BOT=$VITE_TELEGRAM_
 RUN cd web && npm run build && npm prune --omit=dev
 
 FROM node:24-bookworm-slim
+# curl : contrôle de santé de Coolify.
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 FIRMO_API_PORT=8790 FIRMO_API_INTERNAL_URL=http://127.0.0.1:8790
 
