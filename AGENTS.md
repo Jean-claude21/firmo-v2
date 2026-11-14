@@ -38,7 +38,7 @@ API (`api/`, Node ≥ 22) :
 cd api && npm ci
 npm run check      # types
 npm test           # vitest (sans réseau)
-npm run dev        # API + worker sur :8787 (base locale, canal simulateur)
+npm run dev        # API + worker sur :8790 (base locale, canal simulateur)
 ```
 
 Web (`web/`) :
