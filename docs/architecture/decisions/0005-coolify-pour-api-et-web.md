@@ -25,3 +25,9 @@ en Docker.
 API Hono (Node 24) et web TanStack Start en conteneurs Docker sur Coolify, un couple par
 environnement. Neon garde Postgres (branches), Neon Auth (admins) et Object Storage (clés S3 par
 branche). Le code Hono reste portable.
+
+## Précision (2026-11-14, spec 005)
+
+Comme Pono sur le même serveur : **une seule image Docker par environnement**. Le serveur web
+(port 3000, seul exposé) sert le site et relaie `/v1/*` et `/health` vers l'API (port 8790, local au
+conteneur). Un domaine, pas de CORS, une application Coolify par environnement.
