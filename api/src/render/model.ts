@@ -79,11 +79,13 @@ export function renderModel(doc: DocumentView, options: RenderOptions) {
   if (hasTax) before.push({ label: w.tax(doc.taxLabel ?? "", percentText(doc.taxRateBp, sep)), value: num(doc.taxMinor) });
 
   const after: Array<{ label: string; value: string; strong: boolean }> = [];
+  const hasPayments = doc.payable && doc.payments.length > 0;
   if (doc.depositMinor !== null && doc.depositBp) {
     after.push({ label: w.deposit(percentText(doc.depositBp, sep)), value: num(doc.depositMinor), strong: false });
-    after.push({ label: w.balanceAfterDeposit, value: num(BigInt(doc.totalMinor) - BigInt(doc.depositMinor)), strong: true });
+    // Un seul solde sur le document : après les paiements s'il y en a, sinon après l'acompte.
+    if (!hasPayments) after.push({ label: w.balanceAfterDeposit, value: num(BigInt(doc.totalMinor) - BigInt(doc.depositMinor)), strong: true });
   }
-  if (doc.payable && doc.payments.length > 0) {
+  if (hasPayments) {
     for (const p of doc.payments) after.push({ label: w.paid(p.method), value: num(p.amountMinor), strong: false });
     after.push({ label: w.paidTotal, value: num(doc.paidMinor), strong: false });
     after.push({ label: w.balance, value: num(BigInt(doc.totalMinor) - BigInt(doc.paidMinor)), strong: true });

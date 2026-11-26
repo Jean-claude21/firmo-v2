@@ -9,12 +9,12 @@ import sys
 cmd = sys.argv[1]
 path = sys.argv[2]
 if cmd == "text":
-    import fitz
+    import pymupdf as fitz
     doc = fitz.open(path)
     sys.stdout.reconfigure(encoding="utf-8")
     print("\n".join(page.get_text() for page in doc))
 elif cmd == "images":
-    import fitz
+    import pymupdf as fitz
     doc = fitz.open(path)
     print(sum(len(page.get_images(full=True)) for page in doc))
 elif cmd == "color":

@@ -12,6 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as ConditionsRouteImport } from './routes/conditions'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FormatsRouteImport } from './routes/formats'
+import { Route as SuppressionDonneesRouteImport } from './routes/suppression-donnees'
 import { Route as AccesTokenRouteImport } from './routes/acces.$token'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminConfigurationRouteImport } from './routes/admin.configuration'
@@ -45,6 +50,31 @@ const AdminRoute = AdminRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConditionsRoute = ConditionsRouteImport.update({
+  id: '/conditions',
+  path: '/conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormatsRoute = FormatsRouteImport.update({
+  id: '/formats',
+  path: '/formats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuppressionDonneesRoute = SuppressionDonneesRouteImport.update({
+  id: '/suppression-donnees',
+  path: '/suppression-donnees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccesTokenRoute = AccesTokenRouteImport.update({
@@ -147,6 +177,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/formats': typeof FormatsRoute
+  '/suppression-donnees': typeof SuppressionDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
@@ -169,6 +204,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/formats': typeof FormatsRoute
+  '/suppression-donnees': typeof SuppressionDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
@@ -194,6 +234,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/formats': typeof FormatsRoute
+  '/suppression-donnees': typeof SuppressionDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
@@ -220,6 +265,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/formats'
+    | '/suppression-donnees'
     | '/acces/$token'
     | '/admin/configuration'
     | '/admin/conversations'
@@ -242,6 +292,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/formats'
+    | '/suppression-donnees'
     | '/acces/$token'
     | '/admin/configuration'
     | '/admin/conversations'
@@ -266,6 +321,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/formats'
+    | '/suppression-donnees'
     | '/acces/$token'
     | '/admin/configuration'
     | '/admin/conversations'
@@ -291,6 +351,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
+  ConditionsRoute: typeof ConditionsRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ContactRoute: typeof ContactRoute
+  FormatsRoute: typeof FormatsRoute
+  SuppressionDonneesRoute: typeof SuppressionDonneesRoute
   AccesTokenRoute: typeof AccesTokenRoute
   DTokenRoute: typeof DTokenRoute
   PaiementSimulateurIdRoute: typeof PaiementSimulateurIdRoute
@@ -317,6 +382,41 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conditions': {
+      id: '/conditions'
+      path: '/conditions'
+      fullPath: '/conditions'
+      preLoaderRoute: typeof ConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formats': {
+      id: '/formats'
+      path: '/formats'
+      fullPath: '/formats'
+      preLoaderRoute: typeof FormatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suppression-donnees': {
+      id: '/suppression-donnees'
+      path: '/suppression-donnees'
+      fullPath: '/suppression-donnees'
+      preLoaderRoute: typeof SuppressionDonneesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/acces/$token': {
@@ -507,6 +607,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
+  ConditionsRoute: ConditionsRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  ContactRoute: ContactRoute,
+  FormatsRoute: FormatsRoute,
+  SuppressionDonneesRoute: SuppressionDonneesRoute,
   AccesTokenRoute: AccesTokenRoute,
   DTokenRoute: DTokenRoute,
   PaiementSimulateurIdRoute: PaiementSimulateurIdRoute,

@@ -13,6 +13,7 @@ import { decodeImage, detectImageType, dominantColor, toPng } from "../portal/lo
 import type { RenderService } from "../render/service.js";
 import { pgDocumentStore } from "../documents/store.js";
 import { presentationSample } from "../voix/document.js";
+import { buildFormatDocument, FORMAT_OPTIONS, type FormatOption } from "../portal/formats.js";
 
 // Espace artisan (ART-1 à ART-5) et page publique du document (ART-7). Le web envoie ce que
 // l'artisan tape ; montants et transitions sont décidés en SQL.
@@ -340,7 +341,7 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
   app.get("/v1/portal/dashboard", auth, async (c) => {
     const id = org(c);
     const r = await sqlOne<{ v: Record<string, unknown> }>(d.pool, "select app.org_dashboard($1) as v", [id]);
-    const recent = await d.documents.list(id, { limit: 5 });
+    const recent = await d.documents.list(id, { limit: 10 });
     return c.json({ stats: r.v, recent: recent.items, entitlement: await d.documents.entitlement(id) });
   });
 
@@ -499,6 +500,7 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
       sql<Row>(
         d.pool,
         `select p.code, app.label(p.labels, $1) as label, p.price_minor::text as price_minor, p.quota, p.period_days,
+                p.grace_days, p.top_up_documents, p.top_up_price_minor::text as top_up_price_minor,
                 cu.code as currency, cu.minor_units, cu.symbol, cu.symbol_before, cu.thousands_separator, cu.decimal_separator
          from public.plans p join public.currencies cu on cu.code = p.currency_code
          where p.active and p.currency_code = (
@@ -508,13 +510,45 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
         [locale, country],
       ),
     ]);
+    const warn = await sqlOne<{ n: number }>(d.pool, "select coalesce((app.setting('subscription_warn_days') #>> '{}')::int, 3) as n");
     return c.json({
       trialDocuments: trial.n,
+      warnDays: warn.n,
       plans: plans.map((p) => ({
         code: p.code, label: p.label, priceMinor: p.price_minor, quota: p.quota, periodDays: p.period_days,
+        graceDays: p.grace_days, topUp: p.top_up_price_minor && p.top_up_documents ? { documents: p.top_up_documents, priceMinor: p.top_up_price_minor } : null,
         currency: { code: p.currency, minorUnits: p.minor_units, symbol: p.symbol, symbolBefore: p.symbol_before, thousandsSeparator: p.thousands_separator, decimalSeparator: p.decimal_separator },
       })),
     }, 200, { "Cache-Control": "public, max-age=300" });
+  });
+
+  // ------------------------------------------------------------- formats (P-67)
+  // Aperçus publics réels : même moteur que les documents, contenu d'exemple, rien de stocké.
+  const formatCache = new Map<string, { pdf: Buffer; png: Buffer }>();
+  app.get("/v1/public/formats/:file", async (c) => {
+    const kind = c.req.param("file") === "preview.pdf" ? "pdf" : c.req.param("file") === "preview.png" ? "png" : null;
+    if (!kind) throw httpErrors.notFound();
+    const q = parseQuery(c, z.object({
+      scenario: z.enum(["express", "detaille", "professionnel", "facture"]).default("professionnel"),
+      options: z.string().max(300).default(FORMAT_OPTIONS.join(",")),
+      locale: z.enum(["fr", "en"]).default("fr"),
+    }));
+    const chosen = new Set(q.options.split(",").filter((o): o is FormatOption => (FORMAT_OPTIONS as readonly string[]).includes(o)));
+    const options = Object.fromEntries(FORMAT_OPTIONS.map((o) => [o, chosen.has(o)])) as Record<FormatOption, boolean>;
+    const key = `${q.locale}:${q.scenario}:${FORMAT_OPTIONS.filter((o) => options[o]).join(",")}`;
+    let out = formatCache.get(key);
+    if (!out) {
+      const view = await buildFormatDocument(d.pool, q.scenario, options, q.locale);
+      const r = await d.render.preview(view);
+      out = { pdf: r.pdf, png: r.png };
+      if (formatCache.size >= 300) formatCache.delete(formatCache.keys().next().value!);
+      formatCache.set(key, out);
+    }
+    return c.body(new Uint8Array(kind === "pdf" ? out.pdf : out.png), 200, {
+      "Content-Type": kind === "pdf" ? "application/pdf" : "image/png",
+      "Cache-Control": "public, max-age=3600",
+      ...(kind === "pdf" ? { "Content-Disposition": `inline; filename="firmo-${q.scenario}.pdf"` } : {}),
+    });
   });
 
   // ------------------------------------------------------------- page publique (ART-7)
