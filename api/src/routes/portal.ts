@@ -4,13 +4,15 @@ import { z } from "zod";
 import { amountFromUser } from "../ai/guard.js";
 import { parsePercentBp, parseQuantity } from "../documents/money.js";
 import type { AdjustmentInput, DocumentStore, DocumentView, DraftContent, LineInput } from "../documents/store.js";
-import { sql, sqlOne } from "../lib/db.js";
+import { fromPgError, sql, sqlOne } from "../lib/db.js";
 import { httpErrors } from "../lib/errors.js";
 import { orgIdOf, requireOrg, type SessionSigner, type SessionVariables } from "../lib/session.js";
 import type { ObjectStore } from "../lib/storage.js";
 import { parseJson, parseQuery, parseWith } from "../lib/validate.js";
 import { decodeImage, detectImageType, dominantColor, toPng } from "../portal/logo.js";
 import type { RenderService } from "../render/service.js";
+import { pgDocumentStore } from "../documents/store.js";
+import { presentationSample } from "../voix/document.js";
 
 // Espace artisan (ART-1 à ART-5) et page publique du document (ART-7). Le web envoie ce que
 // l'artisan tape ; montants et transitions sont décidés en SQL.
@@ -208,8 +210,8 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
     });
   });
 
-  app.patch("/v1/portal/profile", auth, async (c) => {
-    const body = await parseJson(c, z.record(z.string(), z.unknown()));
+  /** Champs de la présentation (noms du web) → colonnes de l'organisation (règles en SQL). */
+  function profilePatch(body: Record<string, unknown>): Record<string, unknown> {
     const map: Record<string, string> = {
       name: "name", tradeCode: "trade_code", countryCode: "country_code", locale: "locale", phone: "phone", email: "email",
       address: "address", legalIds: "legal_ids", taxRegistered: "tax_registered", taxCode: "tax_code", brandColor: "brand_color",
@@ -230,8 +232,47 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
       if (!key) throw httpErrors.validation({ [k]: "champ inconnu" });
       patch[key] = v;
     }
-    await sql(d.pool, "select app.update_profile($1, $2::jsonb)", [org(c), JSON.stringify(patch)]);
+    return patch;
+  }
+
+  app.patch("/v1/portal/profile", auth, async (c) => {
+    const body = await parseJson(c, z.record(z.string(), z.unknown()));
+    await sql(d.pool, "select app.update_profile($1, $2::jsonb)", [org(c), JSON.stringify(profilePatch(body))]);
     return c.json({ ok: true });
+  });
+
+  // P-64 : aperçu en direct de la présentation, avec les valeurs tapées mais pas encore enregistrées.
+  // Tout se passe dans une transaction annulée : la présentation est appliquée par la même règle SQL
+  // que l'enregistrement (refus compris), le document est rendu par le vrai gabarit, rien ne reste.
+  app.post("/v1/portal/presentation/preview", auth, async (c) => {
+    const body = await parseJson(c, z.record(z.string(), z.unknown()));
+    const id = org(c);
+    const patch = profilePatch(body);
+    const client = await d.pool.connect();
+    let view: DocumentView;
+    try {
+      await client.query("begin");
+      await client.query("select app.update_profile($1, $2::jsonb)", [id, JSON.stringify(patch)]);
+      const store = pgDocumentStore(client as unknown as pg.Pool, { shareSecret: "aperçu" });
+      const latest = await client.query<{ id: string }>(
+        "select id from public.documents where org_id = $1 and status <> 'cancelled' order by (status <> 'draft') desc, updated_at desc limit 1", [id]);
+      // Pas encore de document : un exemple sans prix (aucun montant inventé, la ligne reste « à compléter »).
+      const locale = (await client.query<{ locale: string }>("select locale from public.organizations where id = $1", [id])).rows[0]!.locale;
+      const sample = presentationSample(locale);
+      const docId = latest.rows[0]?.id ?? (await store.createDraftContent(id, "quote", {
+        title: sample.title,
+        sections: [{ title: null, lines: [{ label: sample.line, description: null, kind: "priced", quantity: "1", unit: null, unitPriceMinor: null, flatAmountMinor: null, source: "typed" }] }],
+      }, "web"));
+      const issuer = (await client.query<{ issuer: Record<string, unknown> }>("select app.issuer_snapshot($1) as issuer", [id])).rows[0]!.issuer;
+      view = { ...(await store.get(id, docId)), issuer, ...(typeof body.templateCode === "string" ? { template: body.templateCode } : {}) };
+    } catch (error) {
+      throw fromPgError(error);
+    } finally {
+      await client.query("rollback").catch(() => undefined);
+      client.release();
+    }
+    const out = await d.render.preview(view);
+    return c.body(new Uint8Array(out.png), 200, { "Content-Type": "image/png", "Cache-Control": "no-store" });
   });
 
   // ------------------------------------------------------------- clauses (P-07)

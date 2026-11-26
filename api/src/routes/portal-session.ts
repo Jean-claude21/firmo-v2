@@ -2,11 +2,12 @@ import type { Hono } from "hono";
 import { z } from "zod";
 import type { Db } from "../lib/db.js";
 import { sql } from "../lib/db.js";
-import { httpErrors } from "../lib/errors.js";
+import { HttpError } from "../lib/errors.js";
 import { parseJson } from "../lib/validate.js";
 import { type SessionSigner, tokenHash } from "../lib/session.js";
 
-// Échange d'un lien à usage unique (envoyé dans le chat) contre une session artisan (ART-1).
+// Échange d'un lien envoyé dans le chat contre une session artisan (ART-1), réutilisable pendant sa
+// durée (P-68).
 
 export interface PortalSessionStore {
   consume(hash: Buffer): Promise<{ orgId: string; purpose: string; target: string | null }>;
@@ -16,13 +17,20 @@ export interface PortalSessionStore {
 export function pgPortalSessionStore(db: Db): PortalSessionStore {
   return {
     async consume(hash) {
-      const rows = await sql<{ org_id: string; purpose: string; target: string | null }>(
-        db,
-        "select org_id, purpose, target from app.consume_access_link($1)",
-        [hash],
-      );
+      let rows: Array<{ org_id: string; purpose: string; target: string | null }>;
+      try {
+        const r = await db.query("select org_id, purpose, target from app.consume_access_link($1)", [hash]);
+        rows = r.rows;
+      } catch (error) {
+        // P-68 : l'écran explique pourquoi le lien ne s'ouvre pas (expiré, inconnu, compte suspendu).
+        const hint = (error as { hint?: string }).hint;
+        if (hint === "link_expired") throw new HttpError(410, "link_expired", "lien expiré");
+        if (hint === "link_invalid") throw new HttpError(404, "link_invalid", "lien inconnu");
+        if (hint === "org_suspended") throw new HttpError(403, "org_suspended", "compte suspendu");
+        throw error;
+      }
       const row = rows[0];
-      if (!row) throw httpErrors.notFound("lien invalide");
+      if (!row) throw new HttpError(404, "link_invalid", "lien inconnu");
       return { orgId: row.org_id, purpose: row.purpose, target: row.target };
     },
     async sessionDays() {

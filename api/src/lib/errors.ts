@@ -8,11 +8,14 @@ export type ErrorCode =
   | "not_found"
   | "conflict"
   | "validation"
+  | "link_expired"
+  | "link_invalid"
+  | "org_suspended"
   | "rate_limited"
   | "unavailable"
   | "internal";
 
-export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500 | 503;
+export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 422 | 429 | 500 | 503;
 
 export class HttpError extends Error {
   constructor(

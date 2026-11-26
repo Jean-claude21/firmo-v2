@@ -128,6 +128,17 @@ check(meLogo.org.hasLogo === true, "l'organisation a un logo");
 const bad = await api("/v1/portal/logo", { token: T, body: { base64: Buffer.from("pas une image du tout").toString("base64") }, raw: true });
 check(bad.status === 422, "un fichier qui n'est pas une image est refusé avec un message", `statut ${bad.status}`);
 
+// Aperçu en direct (P-64) : une couleur tapée, pas enregistrée, apparaît dans l'aperçu ; rien ne change.
+const live = await api("/v1/portal/presentation/preview", { token: T, body: { brandColor: "#2B4FD6", name: "Nom pas encore enregistré" }, raw: true });
+const liveFile = `${OUT}live-preview.png`;
+writeFileSync(liveFile, Buffer.from(await live.arrayBuffer()));
+check(live.status === 200 && live.headers.get("content-type") === "image/png", "aperçu en direct de la présentation");
+check(Number(inspect("color", liveFile, "#2B4FD6", "20").trim()) > 20, "l'aperçu montre la couleur tapée avant l'enregistrement");
+check(Number(inspect("color", liveFile, "#D60078", "30").trim()) > 50, "l'aperçu montre le logo");
+check((await api("/v1/portal/me", { token: T })).org.brandColor === "#1F6F43", "l'aperçu n'enregistre rien");
+const liveBad = await api("/v1/portal/presentation/preview", { token: T, body: { brandColor: "rouge" }, raw: true });
+check(liveBad.status === 422, "valeur refusée par la même règle que l'enregistrement", `statut ${liveBad.status}`);
+
 // Numérotation et clauses.
 const numbering = await api("/v1/portal/numbering/quote", { token: T, method: "PUT", body: { prefix: "DV", separator: "/", includeYear: true, width: 4, cadence: "annual" } });
 check(/^DV\/\d{4}\/\d{4}$/.test(numbering.preview ?? ""), "format des numéros avec aperçu", JSON.stringify(numbering));
