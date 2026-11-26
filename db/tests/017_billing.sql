@@ -14,7 +14,7 @@ select is((select status from public.subscription_payments where id = :'p_id'), 
 
 select * from app.start_subscription_payment(:'org', 'standard', 'simulator', 'k-4') \gset q_
 select is(app.settle_subscription_payment('simulator', 'e-2', :'q_id', 'succeeded', 2000, 'xof'), 'applied', 'paiement réglé');
-select is((select kind || '/' || quota from app.entitlement(:'org')), 'paid/30', 'période payée ouverte');
+select is((select kind || '/' || quota from app.entitlement(:'org')), 'paid/15', 'période payée ouverte (offre v1 : 15 documents)');
 select is(app.settle_subscription_payment('simulator', 'e-2', :'q_id', 'succeeded', 2000, 'XOF'), 'duplicate', 'événement rejoué ignoré');
 select is((select count(*)::int from public.analytics_events where name = 'subscription_paid' and org_id = :'org'), 1, 'subscription_paid émis une fois');
 

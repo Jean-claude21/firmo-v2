@@ -72,15 +72,16 @@ Légende : ✅ fait et vérifié · ⬜ à faire · ➕ la v2 fait plus que la v
 
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
-| P-50 | Essai : 3 documents finaux sans carte | pgTAP | ⬜ |
-| P-51 | Forfait 2 000 F CFA / mois pour **30 documents finaux** | pgTAP | ⬜ |
-| P-52 | **Recharges** (taille et prix configurables) | pgTAP | ⬜ |
-| P-53 | **Avertissement à 80 %** du quota ; au plafond, brouillon conservé, proposition ABONNEMENT ou RECHARGE | test | ⬜ |
-| P-54 | **Versions d'offre** ; un abonnement garde sa version ; **périodes successives** sans réécrire l'historique ; période de grâce | pgTAP | ⬜ |
-| P-55 | Une correction ne consomme rien ; une conversion émise consomme 1 document | pgTAP | ⬜ |
-| P-56 | **Chariow** : checkout serveur, téléphone et pays pré-remplis, webhook signé, vente accordée une seule fois, rapprochement admin | test + doc | ⬜ |
-| P-57 | **File de confirmation** après paiement (tentatives, reprise) ; le paiement reste acquis si le message échoue | test | ⬜ |
+| P-50 | Essai : 3 documents finaux sans carte | pgTAP | ✅ |
+| P-51 | Forfait 2 000 F CFA / mois pour **15 documents finaux** (dernière décision de la v1, migration `20260817001000` ; ses documents disaient encore 30) | pgTAP | ✅ |
+| P-52 | **Recharges** (taille et prix configurables) | pgTAP | ✅ |
+| P-53 | **Avertissement à 80 %** du quota ; au plafond, brouillon conservé, proposition ABONNEMENT ou RECHARGE | test | ✅ |
+| P-54 | **Versions d'offre** ; un abonnement garde sa version ; **périodes successives** sans réécrire l'historique ; période de grâce | pgTAP | ✅ |
+| P-55 | Une correction ne consomme rien ; une conversion émise consomme 1 document | pgTAP | ✅ |
+| P-56 | **Chariow** : checkout serveur, téléphone et pays pré-remplis, webhook signé, vente accordée une seule fois, rapprochement admin | test + doc | ✅ (Chariow factice ; réel à brancher) |
+| P-57 | **File de confirmation** après paiement (tentatives, reprise) ; le paiement reste acquis si le message échoue | test | ✅ |
 | ➕ | Moneroo et simulateur derrière la même interface | conservé | ✅ |
+| ➕ | Conditions de fin reprises de Struo : rappels avant la fin, à la fin et à la fin de la grâce, une fois chacun, coupés par un renouvellement ; conditions affichées sur la page Abonnement | pgTAP + test | ✅ |
 
 ## 5. Espace artisan et site (spec 012)
 

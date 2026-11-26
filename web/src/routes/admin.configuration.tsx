@@ -153,7 +153,11 @@ function Plans({ config, reload }: { config: Config; reload: () => void }) {
   const C = t.admin.config;
   const staff = useStaff();
   const first = (config.plans ?? []).find((p) => p.active);
-  const [form, setForm] = useState({ code: first?.code ?? "", currency: first?.currency_code ?? "", label: "", priceMinor: "", quota: String(first?.quota ?? ""), periodDays: String(first?.period_days ?? "") });
+  const [form, setForm] = useState({
+    code: first?.code ?? "", currency: first?.currency_code ?? "", label: "", priceMinor: "", quota: String(first?.quota ?? ""), periodDays: String(first?.period_days ?? ""),
+    graceDays: String(first?.grace_days ?? 0), topUpDocuments: first?.top_up_documents ? String(first.top_up_documents) : "",
+    topUpPriceMinor: first?.top_up_price_minor ?? "", chariowProduct: first?.provider_products?.chariow ?? "",
+  });
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
   async function publish(e: React.FormEvent) {
@@ -161,7 +165,13 @@ function Plans({ config, reload }: { config: Config; reload: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await api("staff", "/v1/admin/plans", { body: { code: form.code, currency: form.currency.toUpperCase(), labels: { [locale]: form.label }, priceMinor: form.priceMinor, quota: Number(form.quota), periodDays: Number(form.periodDays) } });
+      await api("staff", "/v1/admin/plans", { body: {
+        code: form.code, currency: form.currency.toUpperCase(), labels: { [locale]: form.label }, priceMinor: form.priceMinor,
+        quota: Number(form.quota), periodDays: Number(form.periodDays), graceDays: Number(form.graceDays || 0),
+        ...(form.topUpDocuments ? { topUpDocuments: Number(form.topUpDocuments) } : {}),
+        ...(form.topUpPriceMinor ? { topUpPriceMinor: form.topUpPriceMinor } : {}),
+        providerProducts: form.chariowProduct ? { chariow: form.chariowProduct.trim() } : {},
+      } });
       reload();
     } catch (err) {
       setError(err as ApiError);
@@ -175,7 +185,7 @@ function Plans({ config, reload }: { config: Config; reload: () => void }) {
       <section className="card overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-line text-muted">
-            <tr><th className="px-4 py-3">{C.code}</th><th className="px-4 py-3">{C.label}</th><th className="px-4 py-3">{C.currency}</th><th className="px-4 py-3 text-right">{C.price}</th><th className="px-4 py-3 text-right">{C.quota}</th><th className="px-4 py-3">{C.version}</th><th className="px-4 py-3" /></tr>
+            <tr><th className="px-4 py-3">{C.code}</th><th className="px-4 py-3">{C.label}</th><th className="px-4 py-3">{C.currency}</th><th className="px-4 py-3 text-right">{C.price}</th><th className="px-4 py-3 text-right">{C.quota}</th><th className="px-4 py-3 text-right">{C.topUpDocuments}</th><th className="px-4 py-3 text-right">{C.grace}</th><th className="px-4 py-3">{C.version}</th><th className="px-4 py-3" /></tr>
           </thead>
           <tbody className="divide-y divide-line">
             {(config.plans ?? []).map((p) => (
@@ -185,6 +195,8 @@ function Plans({ config, reload }: { config: Config; reload: () => void }) {
                 <td className="px-4 py-3">{p.currency_code}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{p.price_minor}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{p.quota}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{p.top_up_documents ? `${p.top_up_documents} · ${p.top_up_price_minor ?? "—"}` : "—"}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{p.grace_days}</td>
                 <td className="px-4 py-3">v{p.version} · {p.active ? C.active : C.inactive}</td>
                 <td className="px-4 py-3 text-right">
                   {p.active && staff?.role === "admin" && <Button variant="ghost" onClick={async () => { await api("staff", `/v1/admin/plans/${p.id}/retire`, { body: {} }); reload(); }}>{C.retire}</Button>}
@@ -203,6 +215,10 @@ function Plans({ config, reload }: { config: Config; reload: () => void }) {
             <Field label={C.price} hint={C.priceHelp} error={error?.fields.priceMinor}><Input inputMode="numeric" value={form.priceMinor} onChange={(e) => setForm({ ...form, priceMinor: e.target.value })} required /></Field>
             <Field label={C.quota}><Input inputMode="numeric" value={form.quota} onChange={(e) => setForm({ ...form, quota: e.target.value })} required /></Field>
             <Field label={C.period}><Input inputMode="numeric" value={form.periodDays} onChange={(e) => setForm({ ...form, periodDays: e.target.value })} required /></Field>
+            <Field label={C.grace} hint={C.graceHelp}><Input inputMode="numeric" value={form.graceDays} onChange={(e) => setForm({ ...form, graceDays: e.target.value })} /></Field>
+            <Field label={C.topUpDocuments} hint={C.topUpHelp}><Input inputMode="numeric" value={form.topUpDocuments} onChange={(e) => setForm({ ...form, topUpDocuments: e.target.value })} /></Field>
+            <Field label={C.topUpPrice} error={error?.fields.topUpPriceMinor}><Input inputMode="numeric" value={form.topUpPriceMinor} onChange={(e) => setForm({ ...form, topUpPriceMinor: e.target.value })} /></Field>
+            <Field label={C.chariowProduct} hint={C.chariowHelp}><Input value={form.chariowProduct} onChange={(e) => setForm({ ...form, chariowProduct: e.target.value })} /></Field>
             {error && <p className="text-danger sm:col-span-3">{error.message}</p>}
             <div className="sm:col-span-3"><Button type="submit" loading={busy}>{C.publish}</Button></div>
           </form>

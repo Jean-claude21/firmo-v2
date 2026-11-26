@@ -21,7 +21,7 @@ select app.admin_update_reference('settings', 'trial_documents', '{"value":5}', 
 select is(app.setting('trial_documents'), '5'::jsonb, 'réglage modifié');
 
 select app.publish_plan('standard', 'XOF', '{"fr":"Firmo mensuel"}', 2500, 40, 30, :'admin') as plan2 \gset
-select is((select version from public.plans where id = :'plan2'), 2, 'nouvelle version d''offre');
+select is((select version from public.plans where id = :'plan2'), 3, 'nouvelle version d''offre (après la v2 de la spec 011)');
 select is((select count(*)::int from public.plans where code = 'standard' and currency_code = 'XOF' and active), 1, 'une seule version active');
 
 select app.grant_period(:'org', 'standard', :'admin');

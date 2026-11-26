@@ -17,7 +17,9 @@ Aucune donnée personnelle dans les propriétés : identifiants techniques et va
 | `payment_recorded` | paiement noté par l'artisan | `partial` |
 | `portal_opened` | lien signé utilisé | `purpose` |
 | `quota_warning` | 80 % du quota | `plan_code` |
-| `subscription_paid` | paiement de l'abonnement confirmé | `plan_code`, `provider` |
+| `subscription_paid` | paiement de l'abonnement confirmé | `plan_code`, `plan_version`, `provider` |
+| `top_up_paid` | recharge confirmée | `units`, `provider` |
+| `subscription_notice` | rappel de fin de période envoyé dans le chat | `stage` (ending, ended, closed) |
 
 ## KPIs (console d'administration)
 
