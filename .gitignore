@@ -17,3 +17,4 @@ playwright-report/
 .DS_Store
 api/test/__output__/
 web/src/routeTree.gen.ts.bak
+__pycache__/

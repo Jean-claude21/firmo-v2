@@ -178,6 +178,12 @@ export function pgConversationStore(pool: pg.Pool) {
     },
 
     /** Identités de messagerie d'une organisation (la plus récente d'abord). */
+    /** Firmo a-t-il déjà écrit à cette identité ? (premier contact dit une seule fois) */
+    async hasOutbound(identityId: string): Promise<boolean> {
+      const rows = await sql<{ e: boolean }>(pool, "select exists (select 1 from public.messages where identity_id = $1 and direction = 'out') as e", [identityId]);
+      return rows[0]?.e ?? false;
+    },
+
     async identities(orgId: string): Promise<Array<{ identityId: string; channel: string; to: string }>> {
       const rows = await sql<{ id: string; channel: string; external_id: string }>(
         pool,

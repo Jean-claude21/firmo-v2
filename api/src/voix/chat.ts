@@ -87,6 +87,8 @@ export interface ChatWords {
   pdfCaption: (typeLabel: string, number: string) => string;
   notUnderstood: string;
   outage: string;
+  /** L'IA vient de tomber : la lecture qui suit est simplifiée (P-39). */
+  degradedNote: string;
   outageVoice: string;
   outagePhoto: string;
   transcribeFailed: string;
@@ -210,6 +212,7 @@ const fr: ChatWords = {
   pdfCaption: (t, n) => `${t} ${n}`,
   notUnderstood: "Je n'ai pas bien saisi la fin. Redis-moi juste les dernières lignes, ou écris-les.",
   outage: "Je n'arrive pas à lire une nouvelle source en ce moment. Écris chaque ligne comme ceci : quantité | libellé | prix. Ton devis déjà commencé reste disponible.",
+  degradedNote: "Je lis en mode simplifié en ce moment. Si une ligne manque ou est mal lue, écris-la comme ceci : quantité | libellé | prix.",
   outageVoice: "J'ai bien reçu ton vocal, mais je n'arrive pas à l'écouter en ce moment. Ton brouillon est conservé. Écris chaque ligne comme ceci : quantité | libellé | prix.",
   outagePhoto: "J'ai bien reçu ta photo, mais je n'arrive pas à lire la feuille en ce moment. Ton brouillon est conservé. Écris chaque ligne comme ceci : quantité | libellé | prix.",
   transcribeFailed: "Je n'ai pas bien saisi ce vocal. Redis-le, ou écris les lignes.",
@@ -306,6 +309,7 @@ const en: ChatWords = {
   shareLink: (url) => `Link to forward to your client: ${url}`,
   notUnderstood: "I didn't catch the end. Just repeat the last lines, or type them.",
   outage: "I can't read a new source right now. Write each line like this: quantity | item | price. Your current draft is kept.",
+  degradedNote: "I'm reading in simplified mode right now. If a line is missing or wrong, write it like this: quantity | item | price.",
   outageVoice: "I got your voice note but can't listen to it right now. Your draft is kept. Write each line like this: quantity | item | price.",
   outagePhoto: "I got your photo but can't read the sheet right now. Your draft is kept. Write each line like this: quantity | item | price.",
   transcribeFailed: "I didn't catch that voice note. Say it again, or type the lines.",
