@@ -15,7 +15,7 @@ function Audit() {
   const list = useApi<{ items: Entry[] }>("staff", `/v1/admin/audit?page=${page}`);
   const fmt = (iso: string) => new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "short", timeStyle: "short" });
   return (
-    <div>
+    <div className="px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.audit} />
       {list.error && <ErrorBox onRetry={list.reload} />}
       {!list.data && !list.error && <SkeletonList rows={8} />}

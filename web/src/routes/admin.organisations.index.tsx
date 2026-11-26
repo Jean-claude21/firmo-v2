@@ -35,7 +35,7 @@ function Organizations() {
   const pages = list.data ? Math.max(1, Math.ceil(list.data.total / 25)) : 1;
 
   return (
-    <div>
+    <div className="px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.organizations} subtitle={list.data ? String(list.data.total) : undefined} />
       <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_200px]">
         <label className="relative block">

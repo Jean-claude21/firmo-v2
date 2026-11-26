@@ -1041,6 +1041,15 @@ export class ConversationEngine {
     await this.tellOrg(orgId, text);
   }
 
+  /** Tâche `staff_message` (P-71, P-72) : un message de l'équipe, ou une demande de renvoi d'un média. */
+  async staffMessage(job: Job): Promise<void> {
+    const orgId = String(job.payload.org_id ?? "");
+    const w = chatWords((await this.d.store.context(orgId)).locale);
+    const preset = job.payload.preset;
+    const text = preset === "ask_voice_again" ? w.askVoiceAgain : preset === "ask_photo_again" ? w.askPhotoAgain : String(job.payload.text ?? "").trim();
+    if (text) await this.tellOrg(orgId, text);
+  }
+
   /** Tâche `subscription_notice` : conditions de fin (avant la fin, à la fin, fin de la grâce). */
   async periodNotice(job: Job): Promise<void> {
     const n = await this.d.store.periodNotice(String(job.payload.subscription_id ?? ""));

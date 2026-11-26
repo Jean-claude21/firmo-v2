@@ -15,7 +15,7 @@ function AiCosts() {
   const data = useApi<{ documents: number; items: Usage[] }>("staff", "/v1/admin/ai");
   const total = data.data?.items.reduce((s, i) => s + (i.costMicroUsd ?? 0), 0) ?? 0;
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.ai} subtitle={A.intro} />
       {data.error && <ErrorBox onRetry={data.reload} />}
       {!data.data && !data.error && <SkeletonList rows={4} />}

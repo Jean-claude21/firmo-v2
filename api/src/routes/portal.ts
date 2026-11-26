@@ -392,8 +392,8 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
 
   const TYPES = { pdf: "application/pdf", svg: "image/svg+xml", png: "image/png" } as const;
 
-  app.get("/v1/portal/documents/:id/file.:kind", auth, async (c) => {
-    const kind = c.req.param("kind") as keyof typeof TYPES;
+  app.get("/v1/portal/documents/:id/:file{file\.(?:pdf|png|svg)}", auth, async (c) => {
+    const kind = c.req.param("file").slice(5) as keyof typeof TYPES;
     if (!(kind in TYPES)) throw httpErrors.notFound();
     const { doc, bytes } = await fileFor(org(c), c.req.param("id"), kind);
     const name = `${doc.number ?? "brouillon"}.${kind}`;
@@ -557,8 +557,8 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
     return c.json(publicView(doc));
   });
 
-  app.get("/v1/public/documents/:token/file.:kind", async (c) => {
-    const kind = c.req.param("kind") as keyof typeof TYPES;
+  app.get("/v1/public/documents/:token/:file{file\.(?:pdf|png|svg)}", async (c) => {
+    const kind = c.req.param("file").slice(5) as keyof typeof TYPES;
     if (!(kind in TYPES)) throw httpErrors.notFound();
     const doc = await d.documents.publicDocument(c.req.param("token"));
     const { bytes } = await fileFor(null, doc.id, kind);

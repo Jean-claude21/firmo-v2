@@ -116,6 +116,9 @@ export interface ChatWords {
   noQuote: string;
   deletionRecorded: string;
   adminLink: (url: string, minutes: number) => string;
+  /** Demandés depuis la console après un incident (P-71). */
+  askVoiceAgain: string;
+  askPhotoAgain: string;
   adminDenied: string;
   updated: string;
   lineNotFound: (n: number) => string;
@@ -249,6 +252,8 @@ const fr: ChatWords = {
   noQuote: "Je n'ai pas trouvé ce devis.",
   deletionRecorded: "C'est noté : ta demande de suppression est enregistrée. Je te confirme ici quand elle est traitée.",
   adminLink: (url, minutes) => `Ton accès à l'administration, valable ${minutes} minutes : ${url}`,
+  askVoiceAgain: "Je n'ai pas pu écouter ton dernier vocal. Renvoie-le, ou écris ta vente : ton brouillon est gardé.",
+  askPhotoAgain: "Je n'ai pas pu lire ta dernière photo. Renvoie-la bien éclairée, ou écris ta vente : ton brouillon est gardé.",
   adminDenied: "Cette identité n'ouvre pas l'administration.",
   updated: "C'est enregistré.",
   lineNotFound: (n) => `Je ne vois pas de ligne ${n}.`,
@@ -344,6 +349,8 @@ const en: ChatWords = {
   noQuote: "I couldn't find that quote.",
   deletionRecorded: "Noted: your deletion request is recorded. I'll confirm here once it's done.",
   adminLink: (url, minutes) => `Your admin access, valid ${minutes} minutes: ${url}`,
+  askVoiceAgain: "I couldn't listen to your last voice note. Send it again, or write your sale: your draft is kept.",
+  askPhotoAgain: "I couldn't read your last photo. Send it again in good light, or write your sale: your draft is kept.",
   adminDenied: "This identity doesn't open the admin console.",
   updated: "Saved.",
   lineNotFound: (n) => `I don't see a line ${n}.`,
