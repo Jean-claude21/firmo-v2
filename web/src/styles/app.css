@@ -1,34 +1,52 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
-@import "@fontsource/source-serif-4/600.css";
-@import "@fontsource/source-serif-4/700.css";
+@import "@fontsource/inter-tight/400.css";
+@import "@fontsource/inter-tight/500.css";
+@import "@fontsource/inter-tight/600.css";
+@import "@fontsource/inter-tight/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/jetbrains-mono/700.css";
 
-/* Jetons du design (docs/design/DESIGN.md). */
+/*
+ * Jetons du système validé de la v1 (docs/design/DESIGN.md, P-60) : achromatique, Inter Tight pour
+ * la langue, JetBrains Mono pour tous les nombres, rayon 5 px sur ce qui s'actionne, 0 sur le
+ * contenu, aucune ombre. La seule couleur du produit est celle de l'artisan, dans son document.
+ * Écart assumé : le gris de texte secondaire est un cran plus foncé que la v1 (#787f86 → #686e75)
+ * pour tenir le contraste AA sur le papier (constitution VIII).
+ */
 @theme {
-  --color-ink: #14213d;
-  --color-ink-soft: #2a3a5c;
-  --color-amber: #e9a23b;
-  --color-amber-text: #9a5b0b;
-  --color-amber-soft: #fdf3e2;
-  --color-paper: #faf8f4;
+  --color-ink: #15171a;
+  --color-ink-soft: #3c4248;
+  --color-muted: #686e75;
+  --color-mute-soft: #787f86;
+  --color-paper: #f8f6f2;
+  --color-paper-alt: #efece6;
   --color-surface: #ffffff;
-  --color-line: #e7e3db;
-  --color-muted: #5f5e5a;
-  --color-ok: #067647;
-  --color-ok-soft: #e7f5ee;
-  --color-warn: #b54708;
-  --color-warn-soft: #fef3e6;
-  --color-danger: #b42318;
-  --color-danger-soft: #fdeceb;
-  --color-info: #1d4ed8;
-  --color-info-soft: #e8efff;
+  --color-line: #dcd8d0;
+  --color-line-strong: #15171a;
 
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Source Serif 4", Georgia, serif;
+  /* États seulement (jamais une identité), toujours avec un texte ou une icône. */
+  --color-ok: #1d6b45;
+  --color-ok-soft: #e8f1ec;
+  --color-warn: #8a5300;
+  --color-warn-soft: #f6efe2;
+  --color-danger: #a3261c;
+  --color-danger-soft: #f8e9e7;
+  --color-info: #15171a;
+  --color-info-soft: #efece6;
 
-  --radius-field: 10px;
-  --radius-card: 16px;
-  --shadow-card: 0 1px 2px rgb(20 33 61 / 0.05), 0 4px 16px rgb(20 33 61 / 0.04);
+  /* Noms hérités : l'accent devient l'encre (plus de couleur de marque). */
+  --color-amber: #15171a;
+  --color-amber-text: #15171a;
+  --color-amber-soft: #efece6;
+
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-field: 5px;
+  --radius-card: 0px;
+  --shadow-card: none;
 }
 
 @layer base {
@@ -36,11 +54,15 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-paper font-sans text-ink antialiased;
+    @apply bg-paper font-sans text-[17px] leading-[26px] text-ink antialiased;
   }
   :focus-visible {
-    outline: 3px solid var(--color-amber);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
+  }
+  .tabular-nums {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -53,16 +75,28 @@
 }
 
 @layer components {
+  /* Contenu : angles droits, filets, jamais de carte flottante. */
   .card {
-    @apply rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)];
+    @apply border border-line bg-surface;
   }
   .field {
-    @apply min-h-11 w-full rounded-[var(--radius-field)] border border-line bg-surface px-3 py-2 text-[15px] text-ink placeholder:text-muted/70 focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 disabled:bg-paper;
+    @apply min-h-12 w-full rounded-[var(--radius-field)] border-[1.5px] border-line bg-surface px-3.5 py-2 text-[17px] text-ink placeholder:text-mute-soft focus:border-ink focus:outline-none disabled:bg-paper disabled:text-muted;
   }
   .label {
-    @apply mb-1.5 block text-sm font-medium text-ink;
+    @apply mb-1.5 block text-[15px] font-semibold text-ink;
+  }
+  /* Libellé technique : petites capitales espacées en chasse fixe (label-mono). */
+  .mono-label {
+    @apply font-mono text-[12px] uppercase leading-4 tracking-[0.14em] text-muted;
+  }
+  .figure {
+    @apply font-mono tabular-nums;
   }
   .skeleton {
-    @apply animate-pulse rounded-md bg-line/70;
+    @apply animate-pulse bg-line/70;
+  }
+  /* Bande pleine largeur à contenu contraint (« aucune carte dans une carte »). */
+  .band {
+    @apply border-b border-line;
   }
 }

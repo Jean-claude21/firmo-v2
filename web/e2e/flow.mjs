@@ -1,4 +1,5 @@
 // Parcours fonctionnel complet sur l'application réelle (API + worker + rendu), sans interface :
+import { fileURLToPath } from "node:url";
 // chat → document → espace artisan (présentation, logo, numérotation, clauses) → document web →
 // émission → PDF vérifié dans son contenu → partage et décision du client → facture → paiement →
 // reçu → révision, duplication → clients → abonnement.
@@ -8,7 +9,7 @@ import { crc32, deflateSync } from "node:zlib";
 import { api, BASE, check, conversation, linkIn, OUT, sleep, staffLogin, summary } from "./lib.mjs";
 
 const PY = process.env.PYTHON ?? "python";
-const inspect = (...args) => execFileSync(PY, ["-I", new URL("./pdfcheck.py", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"), ...args], { encoding: "utf8" });
+const inspect = (...args) => execFileSync(PY, ["-I", fileURLToPath(new URL("./pdfcheck.py", import.meta.url)), ...args], { encoding: "utf8" });
 
 /** PNG uni (carré de couleur sur fond blanc) : un logo reconnaissable dans le rendu. */
 function pngLogo(size, [r, g, b]) {

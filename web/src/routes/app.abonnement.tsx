@@ -76,7 +76,7 @@ function Subscription() {
   const chosen = billing.data?.providers.find((p) => p.code === provider);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 px-4 py-6 sm:px-6">
       <PageTitle title={S.title} />
       {returned === "pending" && <Notice tone="info"><span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{S.pending}</span></Notice>}
       {returned === "succeeded" && <Notice tone="ok"><span className="inline-flex items-center gap-2"><CheckCircle2 className="size-4" />{S.success}</span></Notice>}

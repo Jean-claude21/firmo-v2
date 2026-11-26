@@ -1,11 +1,12 @@
 // Outils du parcours de bout en bout (spec 012) : application réelle (API + worker + web servis),
 // simulateur de messagerie, navigateur Chromium. Aucun double : ce qui passe ici passe en vrai.
 import { mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 export const BASE = process.env.FIRMO_E2E_BASE ?? "http://localhost:3000";
 export const STAFF_EMAIL = process.env.FIRMO_E2E_STAFF ?? "equipe@firmo.test";
-export const OUT = process.env.FIRMO_E2E_OUT ?? new URL("../../.local/e2e/", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
+export const OUT = process.env.FIRMO_E2E_OUT ?? fileURLToPath(new URL("../../.local/e2e/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
