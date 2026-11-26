@@ -88,7 +88,7 @@ Légende : ✅ fait et vérifié · ⬜ à faire · ➕ la v2 fait plus que la v
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
 | P-60 | Système de design validé : achromatique, Inter Tight, JetBrains Mono, rayons 0/5 px, aucune ombre | captures | ✅ |
-| P-61 | **Landing** de la référence : « Tu parles. Firmo rédige. », feuille qui se retourne en document, messagerie, ce qui se passe vraiment, couleurs, « Ce qu'on ne fera jamais », prix, appel final | capture vs référence | ⬜ |
+| P-61 | **Landing** de la référence : « Tu parles. Firmo rédige. », feuille qui se retourne en document, messagerie, ce qui se passe vraiment, couleurs, « Ce qu'on ne fera jamais », prix, appel final | capture vs référence | ✅ |
 | P-62 | **Accueil** : documents disponibles ce mois (x / 30), à continuer, récents, téléchargement | capture vs référence | ✅ |
 | P-63 | **Document** : objet, sections repliables, sous-totaux, onglets détail / conditions / totaux, aperçu PDF, émission avec numéro particulier et quota, dupliquer, en proforma, en facture, partager, télécharger | capture vs référence | ✅ |
 | P-64 | **Présentation** : aperçu PDF en direct, logo, nom, métier, téléphone, couleur, format des numéros avec aperçu, informations professionnelles (RCCM, NIF, adresse, e-mail), clauses, valeurs par défaut | capture vs référence | ✅ |

@@ -77,12 +77,12 @@ function LineEditor({ line, onChange, onRemove, onMove, cur, units, canUp, canDo
   );
 }
 
-function LineRow({ line, total, cur, toConfirm, onEdit, readOnly }: { line: LineDraft; total: string | null | undefined; cur: Currency; toConfirm?: string[]; onEdit?: () => void; readOnly: boolean }) {
+function LineRow({ line, total, unitPriceMinor, cur, toConfirm, onEdit, readOnly }: { line: LineDraft; total: string | null | undefined; unitPriceMinor?: string | null; cur: Currency; toConfirm?: string[]; onEdit?: () => void; readOnly: boolean }) {
   const { t } = useI18n();
   const E = t.app.editor;
   const missing = line.kind === "priced" && (!line.unitPrice.trim() || !line.quantity.trim());
   const sub = line.kind === "priced"
-    ? `${line.quantity || "?"}${line.unit ? ` ${line.unit}` : ""} × ${line.unitPrice ? `${line.unitPrice} ${cur.symbol}` : E.toComplete}`
+    ? `${line.quantity || "?"}${line.unit ? ` ${line.unit}` : ""} × ${unitPriceMinor ? `${figure(unitPriceMinor, cur)} ${cur.symbol}` : line.unitPrice ? `${line.unitPrice} ${cur.symbol}` : E.toComplete}`
     : line.kind === "flat" ? E.kindFlat : E.kindText;
   return (
     <div className="flex min-h-[68px] items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
@@ -182,7 +182,7 @@ function SectionBlock({ draft, sIdx, server, cur, me, readOnly, update, editing,
                 onClose={() => setEditing(null)}
               />
             ) : (
-              <LineRow key={l.key} line={l} total={srvLine?.lineTotalMinor} toConfirm={srvLine?.toConfirm} cur={cur} readOnly={readOnly} onEdit={() => setEditing(l.key)} />
+              <LineRow key={l.key} line={l} total={srvLine?.lineTotalMinor} unitPriceMinor={srvLine?.unitPriceMinor} toConfirm={srvLine?.toConfirm} cur={cur} readOnly={readOnly} onEdit={() => setEditing(l.key)} />
             );
           })}
           {!readOnly && (

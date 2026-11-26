@@ -4,7 +4,7 @@
 - Source : `docs/product/PARITE_V1.md` §5 (P-60 à P-69) ; v1 : `design.md` validé et
   `references/validated/` (landing, client/home, client/editor, client/identity).
 - Fonctionnalités : ART-1 à ART-7, DOC-5, CH-4
-- Statut : terminée (landing : voir la fin)
+- Statut : terminée
 
 ## Ce qui a été fait
 
@@ -32,7 +32,15 @@
 
 ## Landing (P-61)
 
-Faite après les specs 013 et 014, avec des captures réelles de l'application.
+Faite selon la maquette validée de la v1 : « Tu parles. Firmo rédige. », feuille manuscrite qui se
+retourne en document (rotation CSS 3D, version fixe si mouvement réduit), photo, messagerie, ce qui
+se passe vraiment, couleurs, espace, « Ce qu'on ne fera jamais », prix réel (API), appel final.
+Toutes les images sont des rendus et captures réels (`web/e2e/landing-assets.mjs`, compte de
+démonstration présenté comme tel) ; la feuille manuscrite est la photo d'illustration de la v1.
+Vérifiée par `web/e2e/ui-landing.mjs` (mobile et grand écran).
+
+Défaut trouvé : les polices n'étaient jamais chargées (CSS servie en `?url`, chemins vers
+`node_modules`) ; elles sont maintenant embarquées dans `web/public/fonts`.
 
 ## Non vérifié
 

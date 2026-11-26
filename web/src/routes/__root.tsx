@@ -9,12 +9,12 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#14213D" },
+      { name: "theme-color", content: "#15171A" },
       { title: fr.meta.title },
       { name: "description", content: fr.meta.description },
       { property: "og:title", content: fr.meta.title },
       { property: "og:description", content: fr.meta.description },
-      { property: "og:image", content: "/samples/devis-modern.png" },
+      { property: "og:image", content: "/brand/firmo-og.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

@@ -1,0 +1,2 @@
+Inter Tight et JetBrains Mono : polices sous licence SIL Open Font License 1.1 (fichiers woff2 issus de Fontsource,
+sous-ensembles latin et latin étendu). https://openfontlicense.org

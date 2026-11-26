@@ -1,0 +1,9 @@
+Outil : OpenAI ImageGen
+Date : 2026-08-07
+Usage : demonstration avant/apres Firmo
+
+Photo documentaire realiste prise au-dessus d'un etabli de chaudronnier a Lome. Une feuille de
+cahier utilisee porte un devis manuscrit fictif en francais pour des supports metalliques :
+quantites, dimensions et prix unitaires, avec une main-d'oeuvre encerclee. Autour : regle, crayon,
+gants et limailles. Lumiere naturelle, cadrage vertical, aucune personne, aucune marque, aucune
+donnee reelle, pas d'effet publicitaire.
