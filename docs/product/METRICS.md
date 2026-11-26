@@ -1,6 +1,6 @@
 # Métriques — Firmo
 
-Événements émis **côté serveur** dans `analytics_events` (et relayés à PostHog si configuré).
+Événements émis **côté serveur** dans `analytics_events` (et relayés à l'Umami de Kete si configuré).
 Aucune donnée personnelle dans les propriétés : identifiants techniques et valeurs agrégées seulement.
 
 | Événement | Quand | Propriétés |
@@ -14,7 +14,6 @@ Aucune donnée personnelle dans les propriétés : identifiants techniques et va
 | `document_viewed` | page publique ouverte | `doc_type` |
 | `quote_accepted` / `quote_refused` | réponse du client | — |
 | `quote_converted` | devis → facture | — |
-| `payment_recorded` | paiement noté par l'artisan | `partial` |
 | `portal_opened` | lien signé utilisé | `purpose` |
 | `quota_warning` | 80 % du quota | `plan_code` |
 | `subscription_paid` | paiement de l'abonnement confirmé | `plan_code`, `plan_version`, `provider` |
@@ -23,8 +22,9 @@ Aucune donnée personnelle dans les propriétés : identifiants techniques et va
 | `data_deletion_requested` / `data_export_requested` | demande sur les données | `origin` (chat, web) |
 | `data_deleted` | suppression exécutée par l'équipe | `kept_documents` |
 
-Relais PostHog (P-80) : `app.analytics_batch` ne transmet que des propriétés techniques connues
-(liste blanche en SQL) ; `distinct_id` = identifiant de l'organisation, jamais un nom ni un numéro.
+Relais Umami (P-80) : `app.analytics_batch` ne transmet que des propriétés techniques connues
+(liste blanche en SQL), comme événements nommés du site « Firmo » ; jamais un nom ni un numéro.
+Firmo ne suit pas les paiements des clients de l'artisan (décision 0008) : aucun événement de paiement client.
 
 ## KPIs (console d'administration)
 

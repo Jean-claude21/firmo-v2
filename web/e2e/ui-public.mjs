@@ -7,7 +7,7 @@ for (const [label, viewport] of Object.entries({ mobile: { width: 390, height: 8
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const [path, heading] of [["/confidentialite", "Confidentialité"], ["/conditions", "Conditions d'utilisation et de vente"], ["/suppression-donnees", "Suppression des données"], ["/contact", "Contact et assistance"], ["/formats", "Voici ce que Firmo produit."]]) {
+  for (const [path, heading] of [["/confidentialite", "Confidentialité"], ["/conditions", "Conditions d'utilisation et de vente"], ["/suppression-donnees", "Suppression des données"], ["/contact", "Contact et assistance"], ["/formats", "Voici ce que Firmo produit."], ["/mentions-legales", "Mentions légales"], ["/cookies", "Cookies"], ["/traitement-donnees", "Traitement des données"]]) {
     await page.goto(BASE + path, { waitUntil: "networkidle" });
     await page.waitForTimeout(path === "/formats" ? 2500 : 600);
     check(await page.getByRole("heading", { level: 1, name: heading }).isVisible(), `${label} ${path} : titre`);

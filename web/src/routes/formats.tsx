@@ -10,7 +10,7 @@ import { useI18n } from "@/l10n";
 export const Route = createFileRoute("/formats")({ component: Formats });
 
 type Scenario = "express" | "detaille" | "professionnel" | "facture";
-const OPTIONS = ["client", "site", "delivery", "groups", "subtotals", "labor", "transport", "discount", "tax", "deposit", "payments", "validity", "warranty", "conditions"] as const;
+const OPTIONS = ["client", "site", "delivery", "groups", "subtotals", "labor", "transport", "discount", "tax", "deposit", "validity", "warranty", "conditions"] as const;
 type Option = (typeof OPTIONS)[number];
 const AVAILABLE: Record<Scenario, Option[]> = {
   express: ["client"],

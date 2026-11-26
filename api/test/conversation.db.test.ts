@@ -206,7 +206,7 @@ describe.skipIf(!hasDatabase)("conversation de bout en bout (simulateur)", () =>
     expect(out.at(-2)).toBe("document:Ton devis est prêt.");
     expect(out.at(-1)).toMatch(/^text:Lien à transférer à ton client : https:\/\/firmo\.test\/d\//);
 
-    // Facture à partir du devis, aperçu, émission, paiement, reçu.
+    // Facture à partir du devis, aperçu, émission ; aucun suivi de paiement.
     await c.send("facture");
     out = await c.replies();
     expect(out.at(-1)).toMatch(/^text:J'ai préparé une facture à partir de DEV-\d{4}-001\.\n\nJ'ai lu :/);
@@ -214,13 +214,16 @@ describe.skipIf(!hasDatabase)("conversation de bout en bout (simulateur)", () =>
     expect(await c.last()).toMatch(/réponds OK pour le PDF final/);
     await c.send("OK");
     expect(await c.last()).toBe("text:Je prépare le PDF final de la facture.");
+    // Firmo ne suit pas l'argent du client : il le dit, ne note rien et n'émet aucun reçu.
     await c.send("payé 40 000 par Mobile Money");
-    expect(await c.last()).toMatch(/Paiement de 40 000 F CFA noté sur FAC-\d{4}-001\. Reste à payer : 60 000 F CFA/);
+    expect(await c.last()).toMatch(/^text:Firmo ne suit pas les paiements/);
     await c.send("reçu");
-    expect(await c.last()).toMatch(/Je prépare le reçu REC-\d{4}-001\./);
+    expect(await c.last()).toMatch(/^text:Firmo ne suit pas les paiements/);
+    const paid = await pool.query("select count(*)::int as n from public.document_payments p join public.documents d on d.id = p.document_id where d.org_id = $1", [c.orgId]);
+    expect(paid.rows[0].n).toBe(0);
 
     const events = (await pool.query<{ name: string }>("select name from public.analytics_events where org_id = $1", [c.orgId])).rows.map((r) => r.name);
-    for (const e of ["org_created", "submission_received", "reading_done", "preview_sent", "document_issued", "quote_converted", "payment_recorded"]) {
+    for (const e of ["org_created", "submission_received", "reading_done", "preview_sent", "document_issued", "quote_converted"]) {
       expect(events).toContain(e);
     }
   }, 120_000);
@@ -376,5 +379,27 @@ describe.skipIf(!hasDatabase)("conversation de bout en bout (simulateur)", () =>
     await pool.query("select app.start_paid_period($1, (select id from public.plans where code = 'standard' and currency_code = 'XOF' and active))", [c.orgId]);
     await engine.periodNotice({ id: "p", kind: "subscription_notice", payload: await notice("ending:1"), attempts: 1 });
     expect((await c.replies()).length).toBe(before);
+  });
+  it("hors de la fenêtre du canal, l'avis part par le modèle approuvé", async () => {
+    const c = chat();
+    await c.send("aide");
+    const sim = channels.get("simulator") as Channel & { replyWindowHours?: number; sendNotice?: Channel["sendNotice"] };
+    const notices: Array<{ text: string; locale: string }> = [];
+    sim.replyWindowHours = 24;
+    sim.sendNotice = async (_to, text, locale) => { notices.push({ text, locale }); return { externalId: null }; };
+    try {
+      const staff = (text: string) => engine.staffMessage({ id: "s", kind: "staff_message", payload: { org_id: c.orgId, text }, attempts: 1 });
+      // Dans la fenêtre : texte libre.
+      await staff("Bonjour, ici l'équipe Firmo.");
+      expect(await c.last()).toBe("text:Bonjour, ici l'équipe Firmo.");
+      expect(notices).toHaveLength(0);
+      // Dernier message de l'artisan il y a deux jours : modèle approuvé, dans sa langue.
+      await pool.query("update public.channel_identities set last_seen_at = now() - interval '2 days' where org_id = $1", [c.orgId]);
+      await staff("Votre accès est rétabli.");
+      expect(notices).toEqual([{ text: "Votre accès est rétabli.", locale: "fr" }]);
+    } finally {
+      delete sim.replyWindowHours;
+      delete sim.sendNotice;
+    }
   });
 });

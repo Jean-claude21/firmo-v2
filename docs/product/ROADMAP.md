@@ -19,7 +19,8 @@
 | 011-offre-v1 | Offre v1 (15 documents par mois), recharges, alerte à 80 %, versions d'offre, périodes, grâce, conditions de fin (Struo), Chariow, rapprochement, file de confirmation | PARITE_V1 P-50 à P-57 | ✅ 2026-11-26 · Chariow réel à brancher |
 | 012-web-v1 | Système de design v1, accueil, éditeur complet, présentation avec aperçu en direct, abonnement, pages légales, Formats, liens réutilisables, landing | PARITE_V1 P-60 à P-69 | ✅ 2026-11-26 |
 | 013-admin-v1 | Centre de commande, incidents, organisation et support, listes, actions sensibles sur motif, montants sur motif, accès « ADMIN » par le chat, recherche, pilotage | PARITE_V1 P-70 à P-78 | ✅ 2026-11-26 |
-| 014-mesure-v1 | Relais PostHog sans donnée personnelle, rétention des médias, export, suppression sur demande | PARITE_V1 P-80 à P-83 | ✅ 2026-11-26 · PostHog réel à brancher |
+| 014-mesure-v1 | Relais des événements sans donnée personnelle, rétention des médias, export, suppression sur demande | PARITE_V1 P-80 à P-83 | ✅ 2026-11-26 |
+| 015-lancement | Lancement en Afrique : pays européens retirés, mention « non assujetti à la TVA », aucun suivi des paiements clients (décision 0008), Chariow dans la console, avis WhatsApp hors fenêtre, changement de numéro, Umami, Sentry, pages légales Kete | DOC-3, DOC-6, OFF-3, ADM-2, IX | ✅ 2026-11-27 · modèle Meta et clés Chariow à poser |
 
 ## Ce que le porteur doit fournir (hors code)
 
@@ -28,5 +29,5 @@
 - Bot Telegram (BotFather) pour les essais réels immédiats.
 - Compte Moneroo de l'entreprise pour l'abonnement.
 - Clé d'API et secret « pulse » Chariow de Firmo ; prix d'une recharge (jamais fixé dans la v1).
-- Éditeur (nom, coordonnées officielles) et coordonnées d'assistance pour les pages publiques.
-- Clé OpenAI avec crédit (celle de développement est épuisée), clé PostHog.
+- Clé OpenAI avec crédit (celle de développement est épuisée).
+- Modèle WhatsApp `firmo_avis` à faire approuver chez Meta (texte dans `docs/OPERATIONS.md`).

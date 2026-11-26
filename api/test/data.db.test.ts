@@ -4,7 +4,7 @@ import { createApp } from "../src/app.js";
 import { pgDocumentStore } from "../src/documents/store.js";
 import { sessionSigner } from "../src/lib/session.js";
 import { memoryStore } from "../src/lib/storage.js";
-import { type AnalyticsEvent, posthogSink, purgeMedia, relayAnalytics } from "../src/ops/maintenance.js";
+import { type AnalyticsEvent, purgeMedia, relayAnalytics, umamiSink } from "../src/ops/maintenance.js";
 import { DocumentRenderer } from "../src/render/renderer.js";
 import { RenderService } from "../src/render/service.js";
 import { registerAdminV1Routes } from "../src/routes/admin-v1.js";
@@ -53,21 +53,20 @@ describe.skipIf(!hasDatabase)("mesure et données (spec 014)", () => {
     return { org: r.rows[0]!.org_id, identity: r.rows[0]!.identity_id, token: await signer.sign({ scope: "org", orgId: r.rows[0]!.org_id }, 3600) };
   }
 
-  it("P-80 PostHog : propriétés techniques seulement, rien sans clé, relayé une fois", async () => {
+  it("P-80 Umami : propriétés techniques seulement, rien sans identifiant, relayé une fois", async () => {
     const { org } = await newOrg();
     await pool.query("select app.emit('document_shared', $1, $2::jsonb)", [org, JSON.stringify({ doc_type: "quote", via: "web", client_name: "Hôtel du Lac", phone: "+22890", total_minor: 185000 })]);
-    const sent: unknown[] = [];
+    const sent: Array<{ url: string; body: { type: string; payload: { website: string; name: string; data: Record<string, unknown> } } }> = [];
     const fakeFetch = (async (url: string, init?: RequestInit) => {
       sent.push({ url, body: JSON.parse(String(init?.body)) });
       return new Response("{}", { status: 200 });
     }) as typeof fetch;
-    const sink = posthogSink({ host: "https://eu.i.posthog.com", projectKey: "phc_test", fetchImpl: fakeFetch });
+    const sink = umamiSink({ url: "https://umami.example.test/", websiteId: "site-firmo", fetchImpl: fakeFetch });
     await relayAnalytics(pool, sink, 100_000);
-    const batch = (sent[0] as { url: string; body: { api_key: string; batch: Array<{ event: string; distinct_id: string; properties: Record<string, unknown> }> } });
-    expect(batch.url).toBe("https://eu.i.posthog.com/batch/");
-    const ev = batch.body.batch.find((e) => e.event === "document_shared" && e.distinct_id === org)!;
-    expect(ev.properties).toEqual({ doc_type: "quote", via: "web", $lib: "firmo-api" });
-    expect(JSON.stringify(batch.body)).not.toMatch(/Hôtel|\+22890|185000/);
+    expect(sent[0]!.url).toBe("https://umami.example.test/api/send");
+    const ev = sent.find((e) => e.body.payload.name === "document_shared" && e.body.payload.data.via === "web")!;
+    expect(ev.body).toMatchObject({ type: "event", payload: { website: "site-firmo", data: { doc_type: "quote", via: "web" } } });
+    expect(JSON.stringify(sent)).not.toMatch(/Hôtel|\+22890|185000/);
     expect(await relayAnalytics(pool, sink, 100_000)).toBe(0);
     // Échec de l'envoi : rien n'est marqué relayé.
     await pool.query("select app.emit('document_shared', $1, '{}')", [org]);
@@ -120,5 +119,19 @@ describe.skipIf(!hasDatabase)("mesure et données (spec 014)", () => {
     expect(files.files.has(`brand/${org}/logo.png`)).toBe(false);
     expect((await pool.query("select status, name from public.organizations where id = $1", [org])).rows[0]).toEqual({ status: "deleted", name: null });
     expect((await pool.query("select status from public.documents where id = $1", [id])).rows[0].status).toBe("issued");
+  });
+  it("changement de numéro : le nouveau numéro rejoint l'organisation d'origine, motif au journal", async () => {
+    const old = await newOrg();
+    const fresh = await newOrg();
+    const email = `${uid("adm")}@firmo.test`;
+    const user = (await pool.query(`insert into neon_auth."user" (name, email, "emailVerified") values ('a', $1, true) returning id`, [email])).rows[0].id;
+    await pool.query("insert into public.staff (user_id, email, role) values ($1, $2, 'admin')", [user, email]);
+    const staff = await signer.sign({ scope: "staff", userId: user, role: "admin", email }, 3600);
+    const move = (token: string, body: unknown) => app.request(`/v1/admin/identities/${fresh.identity}/move`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+    expect((await move(old.token, { targetOrgId: old.org, reason: "même artisan, vérifié" })).status).toBe(403);
+    expect((await move(staff, { targetOrgId: old.org })).status).toBe(422);
+    expect((await move(staff, { targetOrgId: old.org, reason: "même artisan, vérifié par appel" })).status).toBe(200);
+    expect((await pool.query("select org_id from public.channel_identities where id = $1", [fresh.identity])).rows[0].org_id).toBe(old.org);
+    expect((await pool.query("select count(*)::int as n from public.organizations where id = $1", [fresh.org])).rows[0].n).toBe(0);
   });
 });

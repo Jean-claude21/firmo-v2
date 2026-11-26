@@ -198,23 +198,20 @@ check(pubPdf.status === 200 && pubPdf.type === "application/pdf", "le client té
 const decided = await api(`/v1/public/documents/${shareToken}/decision`, { body: { decision: "accepted", note: "Bon pour accord" } });
 check(decided.status === "accepted", "le client accepte le devis", decided.status);
 
-// ---------------------------------------------------------------- 6. facture, paiement, reçu
-console.log("\n6. Facture, paiement, reçu (DOC-6)");
+// ---------------------------------------------------------------- 6. proforma, facture, aucun encaissement
+console.log("\n6. Proforma et facture ; Firmo ne note aucun paiement client (DOC-6, 0020)");
+const pro = await api(`/v1/portal/documents/${draft.id}/convert`, { token: T, body: { type: "proforma" } });
+const proDraft = await api(`/v1/portal/documents/${pro.id}`, { token: T });
+check(proDraft.type === "proforma" && String(proDraft.totalMinor) === String(doc.totalMinor), "proforma depuis le devis, mêmes montants");
 const inv = await api(`/v1/portal/documents/${draft.id}/convert`, { token: T, body: { type: "invoice" } });
 const invDraft = await api(`/v1/portal/documents/${inv.id}`, { token: T });
 check(invDraft.type === "invoice" && String(invDraft.totalMinor) === String(doc.totalMinor), "conversion en facture, mêmes montants");
 await api(`/v1/portal/documents/${inv.id}/issue`, { token: T, body: {} });
 const invoice = await waitRendered(T, inv.id);
 check(Boolean(invoice.number), "facture émise", invoice.number);
-const pay = await api(`/v1/portal/documents/${inv.id}/payments`, { token: T, body: { amount: "500 000", method: "Mobile Money" } });
-const afterPay = await api(`/v1/portal/documents/${inv.id}`, { token: T });
-check(afterPay.status === "partially_paid", "acompte noté : facture partiellement payée", afterPay.status);
-const receipt = await api(`/v1/portal/payments/${pay.id}/receipt`, { token: T, body: {} });
-const rec = await waitRendered(T, receipt.id);
-check(rec.type === "receipt" && Boolean(rec.number), "reçu émis pour le paiement", `${rec.type} ${rec.number}`);
-const restMinor = BigInt(afterPay.totalMinor) - 500000n;
-await api(`/v1/portal/documents/${inv.id}/payments`, { token: T, body: { amount: restMinor.toString() } });
-check((await api(`/v1/portal/documents/${inv.id}`, { token: T })).status === "paid", "solde noté : facture payée");
+const pay = await api(`/v1/portal/documents/${inv.id}/payments`, { token: T, raw: true, body: { amount: "500 000" } });
+check(pay.status === 404, "aucune route pour noter un paiement client", pay.status);
+check((await api(`/v1/portal/documents/${inv.id}`, { token: T })).status === "issued", "la facture reste émise : l'artisan gère l'encaissement");
 
 // ---------------------------------------------------------------- 7. révision, duplication
 console.log("\n7. Révision, duplication (P-10, P-12)");

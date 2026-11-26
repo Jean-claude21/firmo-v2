@@ -1,5 +1,5 @@
--- Cycle : révision, conversion, partage, décision du client, paiements, reçus (DOC-6, ART-7).
-select plan(21);
+-- Cycle : révision, conversion, partage, décision du client, sans suivi des paiements (DOC-6, ART-7).
+select plan(17);
 
 select tests.ready_org('cyc') as org \gset
 select tests.ready_org('other', '+22991000000') as other \gset
@@ -38,19 +38,10 @@ select is(app.convert_document(:'org', :'r'), :'inv'::uuid, 'une seule facture p
 select is((select total_minor from public.documents where id = :'inv'), 90000::bigint, 'montants repris');
 select app.issue_document(:'org', :'inv');
 
--- Paiements notés.
-select throws_ok(format('select app.record_payment(%L, %L, 100000)', :'org', :'inv'), '22023', null, 'paiement supérieur au reste refusé');
-select app.record_payment(:'org', :'inv', 40000, current_date, 'Mobile Money') as p1 \gset
-select is((select status from public.documents where id = :'inv'), 'partially_paid', 'acompte');
-select app.record_payment(:'org', :'inv', 50000) as p2 \gset
-select is((select status || '/' || paid_minor from public.documents where id = :'inv'), 'paid/90000', 'soldée');
-select throws_ok(format('select app.cancel_document(%L, %L)', :'org', :'inv'), '42501', null, 'une facture payée ne s''annule pas');
-
--- Reçu.
-select app.issue_receipt(:'org', :'p1') as rec \gset
-select is((select number from public.documents where id = :'rec'), 'REC-' || extract(year from current_date)::int || '-001', 'reçu numéroté');
-select is((select total_minor from public.documents where id = :'rec'), 40000::bigint, 'montant du reçu');
-select is(app.issue_receipt(:'org', :'p1'), :'rec'::uuid, 'un seul reçu par paiement');
-select is((select used from app.entitlement(:'org')), 2, 'reçu sans consommation (devis + facture seulement)');
+-- Firmo ne note aucun paiement client et n'émet pas de reçu (0020) : l'artisan gère lui-même.
+select throws_ok(format('select app.record_payment(%L, %L, 40000)', :'org', :'inv'), '42501', null, 'aucun paiement client noté');
+select throws_ok(format('select app.issue_receipt(%L, gen_random_uuid())', :'org'), '42501', null, 'aucun reçu émis');
+select is((select active from public.document_types where code = 'receipt'), false, 'type reçu retiré');
+select is((select status || '/' || paid_minor from public.documents where id = :'inv'), 'issued/0', 'la facture reste émise, sans suivi d''encaissement');
 
 select * from finish();

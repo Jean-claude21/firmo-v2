@@ -443,16 +443,6 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
     await d.documents.markShared(o, id, "web");
     return { url: d.render.shareLink(id) };
   });
-  action("payments", async (o, id, b) => {
-    const amount = amountFromUser(b.amount, await minorUnits(o));
-    if (amount === null || amount <= 0n) throw httpErrors.validation({ amount: "montant invalide" });
-    return { id: await d.documents.recordPayment(o, id, amount.toString(), b.paidOn ?? null, b.method ?? null, b.note ?? null) };
-  }, z.object({ amount: z.string().min(1).max(30), paidOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), method: z.string().max(80).nullable().optional(), note: z.string().max(300).nullable().optional() }));
-
-  app.post("/v1/portal/payments/:id/receipt", auth, async (c) => {
-    return c.json({ id: await d.documents.issueReceipt(org(c), c.req.param("id")) });
-  });
-
   // ------------------------------------------------------------- clients
   app.get("/v1/portal/clients", auth, async (c) => {
     const search = c.req.query("search")?.toLowerCase().slice(0, 80) ?? "";

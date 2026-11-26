@@ -165,6 +165,15 @@ describe.skipIf(!hasDatabase)("abonnement", () => {
       sales[secondSale]!.status = "completed";
       expect((await (await reconcile(staffToken, "avis jamais reçu, vente vue chez Chariow")).json()).result).toBe("applied");
       expect((await reconcile(token, "artisan")).status).toBe(403);
+
+      // Console : l'adresse du Pulse à coller dans Chariow et les avis reçus (spec 015).
+      const panel = await (await call(staffToken, "GET", "/v1/admin/chariow")).json();
+      expect(panel.pulseUrl).toBe("https://api.test/v1/billing/webhooks/chariow");
+      expect(panel.enabled).toBe(true);
+      expect(panel.pulses.some((p: { valid: boolean; event: string | null }) => p.valid && p.event === "successful.sale")).toBe(true);
+      expect(panel.pulses.some((p: { valid: boolean }) => !p.valid)).toBe(true);
+      expect(panel.plans.some((p: { product: string | null }) => p.product === "prd_s1bcdqkm")).toBe(true);
+      expect((await call(token, "GET", "/v1/admin/chariow")).status).toBe(403);
     } finally {
       await pool.query("update public.payment_providers set enabled = false where code = 'chariow'");
     }

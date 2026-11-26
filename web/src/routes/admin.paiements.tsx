@@ -6,6 +6,7 @@ import { Button, ErrorBox, Notice, Select, SkeletonList, StatusBadge } from "@/c
 import { api, useApi } from "@/lib/api";
 import { useI18n } from "@/l10n";
 import { useStaff } from "@/lib/staff";
+import { ChariowPanel } from "@/components/chariow-panel";
 
 // Paiements de l'abonnement (P-73) ; rapprochement d'un paiement en attente (P-56).
 export const Route = createFileRoute("/admin/paiements")({ component: Payments });
@@ -25,6 +26,7 @@ function Payments() {
       <PageHead title={t.admin.nav.payments} subtitle={L.paymentsSub} />
       <div className="space-y-4 p-5 lg:p-6">
         {notice && <Notice tone="ok">{notice}</Notice>}
+        <ChariowPanel />
         <Section title={L.payments} actions={
           <Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label={L.status} className="min-h-10 w-44">
             <option value="">{L.allStatuses}</option>

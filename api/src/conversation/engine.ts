@@ -496,9 +496,8 @@ export class ConversationEngine {
     const c = checker(t.text, ctx.currency.minorUnits);
     const payments = corrections.filter((x) => x.target === "payment");
     const edits = corrections.filter((x) => x.target !== "payment");
-    for (const p of payments) {
-      if (p.target === "payment") await this.recordPayment(t, p.amountText, null, p.method);
-    }
+    // Firmo ne suit pas l'argent des clients (0020) : on le dit, sans rien noter.
+    if (payments.length) await this.say(t, w.paymentsNotTracked);
     if (!edits.length) {
       // Rien de compris à appliquer : on le dit, on ne laisse jamais un message sans réponse.
       if (!payments.length) await this.say(t, this.offline(t) ? w.outage : w.notUnderstood);
@@ -893,19 +892,6 @@ export class ConversationEngine {
     await this.say(t, t.w.sharePrompt(doc.number ?? "", this.d.render.shareLink(doc.id)));
   }
 
-  private async recordPayment(t: Turn, amountText: string, number: string | null, method: string | null) {
-    const { w, ctx } = t;
-    const org = ctx.orgId;
-    const invoice = number ? await this.d.documents.findByNumber(org, number) : await this.d.store.lastOpenInvoice(org);
-    if (!invoice) return this.say(t, w.noInvoice);
-    const amount = checker(t.text, ctx.currency.minorUnits).amount(amountText);
-    if (amount === null || amount <= 0n) return this.say(t, w.valueNotHeard(amountText));
-    await this.d.documents.recordPayment(org, invoice, amount.toString(), null, method);
-    const doc = await this.d.documents.get(org, invoice);
-    const balance = (BigInt(doc.totalMinor) - BigInt(doc.paidMinor)).toString();
-    await this.say(t, w.paymentRecorded(formatMoney(amount, ctx.currency), doc.number ?? "", formatMoney(balance, ctx.currency), doc.status === "paid"));
-  }
-
   // ---------------------------------------------------------------- commandes sans IA
 
   private async command(t: Turn, c: Command): Promise<void> {
@@ -938,16 +924,9 @@ export class ConversationEngine {
       case "doc_type":
         return this.convert(t, c.docType, null);
       case "payment":
-        return this.recordPayment(t, c.amount, c.number, c.method);
-      case "receipt": {
-        const payment = await this.d.store.lastPaymentWithoutReceipt(org);
-        if (!payment) return this.say(t, w.noPayment);
-        const receipt = await this.d.documents.issueReceipt(org, payment);
-        const doc = await this.d.documents.get(org, receipt);
-        await this.d.store.addDelivery(receipt, t.msg.identityId);
-        t.documentId = receipt;
-        return this.say(t, w.receiptIssued(doc.number ?? ""));
-      }
+      case "receipt":
+        // Le client paie l'artisan directement : Firmo ne note aucun paiement, n'émet aucun reçu.
+        return this.say(t, w.paymentsNotTracked);
       case "decision": {
         const quote = c.number ? await this.d.documents.findByNumber(org, c.number) : await this.d.store.lastQuote(org, ["issued", "no_response"]);
         if (!quote) return this.say(t, w.noQuote);
@@ -1065,11 +1044,18 @@ export class ConversationEngine {
     await this.d.store.emit(n.orgId, "subscription_notice", { stage });
   }
 
+  /**
+   * Message que Firmo envoie de lui-même (abonnement, équipe). Hors de la fenêtre du canal
+   * (WhatsApp : 24 h après le dernier message de l'artisan), il part par le modèle approuvé.
+   */
   private async tellOrg(orgId: string, text: string): Promise<void> {
+    const locale = (await this.d.store.context(orgId)).locale;
     for (const id of await this.d.store.identities(orgId)) {
       const channel = this.d.channels.get(id.channel);
       if (!channel) continue;
-      const r = await channel.sendText(id.to, text);
+      // Marge d'un quart d'heure : la fenêtre se compte chez le canal, pas chez nous.
+      const outside = channel.replyWindowHours !== undefined && Date.now() - id.lastSeenAt.getTime() > (channel.replyWindowHours - 0.25) * 3_600_000;
+      const r = outside && channel.sendNotice ? await channel.sendNotice(id.to, text, locale) : await channel.sendText(id.to, text);
       await this.logOut(channel, id.identityId, "text", text, null, null, r.externalId);
     }
   }

@@ -98,13 +98,12 @@ describe.skipIf(!hasDatabase)("espace artisan et page publique", () => {
 
     const invoice = await call("POST", `/v1/portal/documents/${id}/convert`);
     await call("POST", `/v1/portal/documents/${invoice.body.id}/issue`);
+    // Aucune route pour noter un paiement client ni émettre un reçu.
     const pay = await call("POST", `/v1/portal/documents/${invoice.body.id}/payments`, { amount: "50 000", method: "Espèces" });
-    expect(pay.status).toBe(200);
-    const receipt = await call("POST", `/v1/portal/payments/${pay.body.id}/receipt`);
-    expect(receipt.status).toBe(200);
+    expect(pay.status).toBe(404);
 
     const dash = await call("GET", "/v1/portal/dashboard");
-    expect(dash.body.stats.collected_this_month_minor).toBe(50000);
+    expect(dash.body.stats.collected_this_month_minor).toBe(0);
     const clients = await call("GET", "/v1/portal/clients");
     expect(clients.body.items[0].name).toBe("Clinique Saint-Luc");
     const list = await call("GET", "/v1/portal/documents?type=invoice");

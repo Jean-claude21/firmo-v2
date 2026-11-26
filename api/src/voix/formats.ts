@@ -18,7 +18,6 @@ export interface FormatWords {
   transport: { label: string; amount: number };
   discount: { label: string; percent: number };
   depositPercent: number;
-  payment: { amount: number; method: string };
 }
 
 const fr: FormatWords = {
@@ -54,7 +53,6 @@ const fr: FormatWords = {
   transport: { label: "Transport", amount: 25000 },
   discount: { label: "Remise commerciale", percent: 5 },
   depositPercent: 30,
-  payment: { amount: 300000, method: "Espèces" },
 };
 
 const en: FormatWords = {
@@ -90,7 +88,6 @@ const en: FormatWords = {
   labor: { label: "Installation and setup", amount: 180000 },
   transport: { label: "Transport", amount: 25000 },
   discount: { label: "Commercial discount", percent: 5 },
-  payment: { amount: 300000, method: "Cash" },
 };
 
 export function formatWords(locale: string): FormatWords {

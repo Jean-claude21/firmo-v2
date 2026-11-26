@@ -1,13 +1,32 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, MessageCircle } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Logo, Mark } from "@/components/brand";
 import { chatChannel, chatLink } from "@/lib/chat";
 import { useI18n } from "@/l10n";
 
+const UMAMI_ID = import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined;
+const UMAMI_SCRIPT = import.meta.env.VITE_UMAMI_SCRIPT_URL as string | undefined;
+
+/**
+ * Mesure d'audience (Umami de Kete, sans cookie ni identifiant personnel) : seulement sur les pages
+ * publiques, jamais dans l'espace artisan ni la console. Sans configuration, rien n'est chargé.
+ */
+function useAudience() {
+  useEffect(() => {
+    if (!UMAMI_ID || !UMAMI_SCRIPT || document.querySelector("script[data-website-id]")) return;
+    const s = document.createElement("script");
+    s.defer = true;
+    s.src = UMAMI_SCRIPT;
+    s.dataset.websiteId = UMAMI_ID;
+    document.head.appendChild(s);
+  }, []);
+}
+
 /** En-tête et pied des pages publiques (site, conditions, formats). */
 export function PublicHeader() {
   const { t } = useI18n();
+  useAudience();
   const chat = chatLink(chatChannel(), t.landing.firstMessage);
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur">
@@ -38,6 +57,9 @@ export function PublicFooter() {
           <Link to="/confidentialite" className="min-h-11 py-2.5 text-ink-soft hover:text-ink">{F.privacy}</Link>
           <Link to="/suppression-donnees" className="min-h-11 py-2.5 text-ink-soft hover:text-ink">{F.deletion}</Link>
           <Link to="/contact" className="min-h-11 py-2.5 text-ink-soft hover:text-ink">{F.contact}</Link>
+          <Link to="/mentions-legales" className="min-h-11 py-2.5 text-ink-soft hover:text-ink">{F.notice}</Link>
+          <Link to="/traitement-donnees" className="min-h-11 py-2.5 text-ink-soft hover:text-ink">{F.dpa}</Link>
+          <Link to="/cookies" className="min-h-11 py-2.5 text-ink-soft hover:text-ink">{F.cookies}</Link>
         </nav>
       </div>
     </footer>

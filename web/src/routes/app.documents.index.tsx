@@ -9,7 +9,7 @@ import { useT } from "@/l10n";
 
 export const Route = createFileRoute("/app/documents/")({ component: Documents });
 
-const STATUSES = ["draft", "issued", "accepted", "refused", "partially_paid", "paid", "cancelled"] as const;
+const STATUSES = ["draft", "issued", "accepted", "refused", "cancelled"] as const;
 
 function Documents() {
   const t = useT();

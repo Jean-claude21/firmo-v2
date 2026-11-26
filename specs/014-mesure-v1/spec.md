@@ -6,11 +6,11 @@
 
 | ID | Exigence | Vérifié par |
 |---|---|---|
-| P-80 | Événements relayés à PostHog sans nom, téléphone, prix ni contenu (liste blanche de propriétés en SQL) ; sans clé, rien n'est envoyé ; relayé une seule fois | pgTAP 023, `data.db` |
+| P-80 | Événements relayés à l'outil de mesure (Umami depuis la spec 015) sans nom, téléphone, prix ni contenu (liste blanche de propriétés en SQL) ; sans clé, rien n'est envoyé ; relayé une seule fois | pgTAP 023, `data.db` |
 | P-81 | Vocaux et photos sources supprimés du stockage après `media_retention_days` (30) ; le texte lu reste | pgTAP 023, `data.db` |
 | P-82 | Export depuis l'espace : archive ZIP (données JSON, liste CSV, PDF émis) | `data.db`, `ui-data.mjs` |
 | P-83 | Suppression sur demande (chat, espace) exécutée par l'équipe avec motif : conversations, identités, médias, brouillons, clients sans document, présentation et logo effacés ; documents émis et paiements conservés | pgTAP 023, `data.db`, `ui-data.mjs` |
 
 ## Non vérifié
 
-- PostHog réel : clé de projet à fournir (`POSTHOG_PROJECT_KEY`, `POSTHOG_HOST`).
+- Outil de mesure : PostHog remplacé par l'Umami de Kete dans la spec 015 (`UMAMI_URL`, `UMAMI_WEBSITE_ID`).

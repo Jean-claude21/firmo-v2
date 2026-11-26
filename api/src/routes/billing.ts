@@ -156,6 +156,37 @@ export function registerBillingRoutes(app: Hono<{ Variables: SessionVariables }>
     return c.json({ ok: true, result: status.s });
   });
 
+  // Chariow dans la console (comme sur les autres produits Kete) : adresse du Pulse à coller dans la
+  // boutique, état de la configuration, produits reliés aux offres, derniers avis reçus.
+  app.get("/v1/admin/chariow", requireStaff(d.signer), async (c) => {
+    const [provider_, plans, pulses] = await Promise.all([
+      sql<Row>(d.pool, "select enabled from public.payment_providers where code = 'chariow'"),
+      sql<Row>(d.pool, `select code, version, currency_code, price_minor::text as price_minor, quota, provider_products ->> 'chariow' as product
+                        from public.plans where active order by currency_code`),
+      sql<Row>(d.pool, `select id, signature_valid, received_at, left(body, 4000) as body from public.webhook_events
+                        where source = 'billing_chariow' order by received_at desc limit 20`),
+    ]);
+    const chariow = provider("chariow");
+    return c.json({
+      pulseUrl: `${d.apiUrl.replace(/\/$/, "")}/v1/billing/webhooks/chariow`,
+      apiConfigured: Boolean(chariow),
+      enabled: Boolean(provider_[0]?.enabled),
+      plans: plans.map((p) => ({ code: p.code, version: p.version, currency: p.currency_code, priceMinor: p.price_minor, quota: p.quota, product: p.product })),
+      pulses: pulses.map((p) => {
+        let event: string | null = null;
+        let sale: string | null = null;
+        try {
+          const b = JSON.parse(p.body);
+          event = b.event ?? null;
+          sale = b.sale?.id ?? null;
+        } catch {
+          // corps illisible : gardé brut au journal
+        }
+        return { id: Number(p.id), valid: p.signature_valid, at: p.received_at.toISOString(), event, sale };
+      }),
+    });
+  });
+
   // Rapprochement par l'équipe (P-56) : un paiement resté en attente est relu chez le fournisseur ;
   // seul ce que le fournisseur confirme est appliqué, une fois, avec le motif au journal.
   const admin = requireStaff(d.signer, ["admin"]);

@@ -183,16 +183,8 @@ await page.getByRole("button", { name: "Voir le PDF" }).last().click();
 await page.waitForTimeout(2500);
 await page.getByRole("button", { name: "Émettre le PDF final" }).click();
 await page.waitForTimeout(3500);
-await page.getByRole("button", { name: "Noter un paiement" }).click();
-await page.getByLabel(/^Montant/).fill("97200");
-await page.getByLabel(/Moyen/).fill("Mobile Money");
-await page.getByRole("button", { name: "Enregistrer le paiement" }).click();
-await page.waitForTimeout(2000);
-check(await page.getByText("Mobile Money").first().isVisible(), "paiement noté dans la liste");
-await page.getByRole("button", { name: "Émettre le reçu" }).click();
-await page.waitForTimeout(2500);
-check(await page.getByRole("link", { name: "Reçu émis" }).isVisible(), "reçu émis depuis l'interface");
-await shot(page, "ui-08-invoice-payments");
+check(!(await page.getByRole("button", { name: "Noter un paiement" }).count()), "aucun suivi de paiement client dans la facture");
+await shot(page, "ui-08-invoice");
 
 // Accueil avec des documents.
 await page.goto(`${BASE}/app`, { waitUntil: "networkidle" });
