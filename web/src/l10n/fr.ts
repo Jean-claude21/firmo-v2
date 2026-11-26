@@ -113,6 +113,17 @@ export const fr = {
     nav: { dashboard: "Accueil", documents: "Documents", clients: "Clients", profile: "Présentation", subscription: "Abonnement" },
     menu: "Menu",
     typeTag: { quote: "DEV", proforma: "PRO", invoice: "FAC", receipt: "REÇ", delivery_note: "BL" } as Record<string, string>,
+    myData: {
+      title: "Vos données",
+      hint: "Exporter, ou demander la suppression",
+      exportText: "Téléchargez tout ce que vous avez mis dans Firmo : vos documents en PDF, la liste de vos documents (tableur) et toutes vos données.",
+      export: "Exporter mes données",
+      deleteText: "Vous pouvez demander la suppression de vos données. Les documents émis restent conservés le temps exigé par la loi.",
+      learnMore: "Ce qui est supprimé, ce qui reste",
+      delete: "Demander la suppression",
+      deleteConfirm: "Demander la suppression de vos données ? Exportez-les d'abord : après la suppression, rien ne peut être restitué.",
+      pending: (d: string) => `Votre demande de suppression du ${d} est en cours de traitement. Vous recevrez la confirmation dans votre messagerie.`,
+    },
     newDocument: {
       byMessage: "Le plus rapide : par message",
       byMessageHint: "Un vocal, une photo de votre feuille ou un texte. Firmo prépare le document.",

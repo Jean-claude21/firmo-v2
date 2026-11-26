@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { BadgeCheck, CreditCard, Files, LogOut, MessageCircle, MoreVertical, Users } from "lucide-react";
+import { BadgeCheck, CreditCard, Download, Files, LogOut, MessageCircle, MoreVertical, Users } from "lucide-react";
+import { downloadExport } from "@/components/my-data";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/brand";
 import { OfflineBanner } from "@/components/ui";
@@ -55,6 +56,7 @@ function Menu() {
         <div className="absolute right-0 top-12 z-40 w-60 border border-line bg-surface py-1" role="menu" onClick={() => setOpen(false)}>
           <Link to="/app/clients" className={item} role="menuitem"><Users className="size-5" aria-hidden /> {t.app.nav.clients}</Link>
           <Link to="/app/abonnement" className={item} role="menuitem"><CreditCard className="size-5" aria-hidden /> {t.app.nav.subscription}</Link>
+          <button type="button" role="menuitem" className={item} onClick={() => void downloadExport().catch(() => alert(t.common.error))}><Download className="size-5" aria-hidden /> {t.app.myData.export}</button>
           <button
             type="button"
             role="menuitem"

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, ChevronDown, ChevronUp, ImagePlus, Maximize2, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { percentText } from "@/components/document-model";
+import { MyData } from "@/components/my-data";
 import { Button, ErrorBox, Field, Input, Notice, Select, SkeletonList, Textarea } from "@/components/ui";
 import { api, type ApiError, authedBlobUrl, session, useApi } from "@/lib/api";
 import { type Me, useMe } from "@/lib/portal";
@@ -433,6 +434,10 @@ function PresentationForm({ me, reload }: { me: Me; reload: () => void }) {
 
       <Fold title={P.clauses} subtitle={P.clausesHint}>
         <Clauses />
+      </Fold>
+
+      <Fold title={t.app.myData.title} subtitle={t.app.myData.hint}>
+        <MyData />
       </Fold>
 
       <div className="sticky bottom-[60px] z-10 border-t border-line bg-paper px-4 py-3 sm:px-6 lg:bottom-0">

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Activity, AlertTriangle, BarChart3, Bot, Building2, CreditCard, Files, History, Layers, LogOut, MessagesSquare, Search, Settings2, Smartphone, Contact, UsersRound, Fingerprint, Repeat } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Bot, Building2, CreditCard, Files, History, Layers, LogOut, MessagesSquare, Search, Settings2, Smartphone, Contact, UsersRound, Fingerprint, Repeat, Database } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { StaffContext as Ctx, type StaffMe } from "@/lib/staff";
 import { Logo, Mark } from "@/components/brand";
@@ -142,6 +142,7 @@ function Shell({ onSignOut }: { onSignOut: () => void }) {
     { to: "/admin/incidents", label: N.incidents, icon: AlertTriangle, badge: open },
     { to: "/admin/clients", label: N.clients, icon: Contact },
     { to: "/admin/identites", label: N.identities, icon: Fingerprint },
+    { to: "/admin/donnees", label: N.data, icon: Database },
     { to: "/admin/pilotage", label: N.pilotage, icon: BarChart3 },
   ] as const;
   const system = [

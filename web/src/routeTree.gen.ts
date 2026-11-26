@@ -24,6 +24,7 @@ import { Route as AdminClientsRouteImport } from './routes/admin.clients'
 import { Route as AdminConfigurationRouteImport } from './routes/admin.configuration'
 import { Route as AdminConversationsRouteImport } from './routes/admin.conversations'
 import { Route as AdminDocumentsRouteImport } from './routes/admin.documents'
+import { Route as AdminDonneesRouteImport } from './routes/admin.donnees'
 import { Route as AdminEquipeRouteImport } from './routes/admin.equipe'
 import { Route as AdminIaRouteImport } from './routes/admin.ia'
 import { Route as AdminIdentitesRouteImport } from './routes/admin.identites'
@@ -119,6 +120,11 @@ const AdminConversationsRoute = AdminConversationsRouteImport.update({
 const AdminDocumentsRoute = AdminDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDonneesRoute = AdminDonneesRouteImport.update({
+  id: '/donnees',
+  path: '/donnees',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminEquipeRoute = AdminEquipeRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
   '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/donnees': typeof AdminDonneesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/ia': typeof AdminIaRoute
   '/admin/identites': typeof AdminIdentitesRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
   '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/donnees': typeof AdminDonneesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/ia': typeof AdminIaRoute
   '/admin/identites': typeof AdminIdentitesRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
   '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/donnees': typeof AdminDonneesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/ia': typeof AdminIaRoute
   '/admin/identites': typeof AdminIdentitesRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/admin/configuration'
     | '/admin/conversations'
     | '/admin/documents'
+    | '/admin/donnees'
     | '/admin/equipe'
     | '/admin/ia'
     | '/admin/identites'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/admin/configuration'
     | '/admin/conversations'
     | '/admin/documents'
+    | '/admin/donnees'
     | '/admin/equipe'
     | '/admin/ia'
     | '/admin/identites'
@@ -431,6 +442,7 @@ export interface FileRouteTypes {
     | '/admin/configuration'
     | '/admin/conversations'
     | '/admin/documents'
+    | '/admin/donnees'
     | '/admin/equipe'
     | '/admin/ia'
     | '/admin/identites'
@@ -574,6 +586,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/admin/documents'
       preLoaderRoute: typeof AdminDocumentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/donnees': {
+      id: '/admin/donnees'
+      path: '/donnees'
+      fullPath: '/admin/donnees'
+      preLoaderRoute: typeof AdminDonneesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/equipe': {
@@ -732,6 +751,7 @@ interface AdminRouteChildren {
   AdminConfigurationRoute: typeof AdminConfigurationRoute
   AdminConversationsRoute: typeof AdminConversationsRoute
   AdminDocumentsRoute: typeof AdminDocumentsRoute
+  AdminDonneesRoute: typeof AdminDonneesRoute
   AdminEquipeRoute: typeof AdminEquipeRoute
   AdminIaRoute: typeof AdminIaRoute
   AdminIdentitesRoute: typeof AdminIdentitesRoute
@@ -753,6 +773,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminConfigurationRoute: AdminConfigurationRoute,
   AdminConversationsRoute: AdminConversationsRoute,
   AdminDocumentsRoute: AdminDocumentsRoute,
+  AdminDonneesRoute: AdminDonneesRoute,
   AdminEquipeRoute: AdminEquipeRoute,
   AdminIaRoute: AdminIaRoute,
   AdminIdentitesRoute: AdminIdentitesRoute,

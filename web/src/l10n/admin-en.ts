@@ -3,7 +3,7 @@ import type { AdminMessages } from "./admin-fr";
 export const adminEn: AdminMessages = {
   title: "Firmo console",
   login: { title: "Team sign-in", email: "Email", password: "Password", submit: "Sign in", error: "Sign-in failed.", chatHint: "From your authorised messaging account, write “ADMIN” to Firmo: you get a one-time access link." },
-  nav: { dashboard: "Dashboard", organizations: "Organisations", conversations: "Conversations", simulator: "Simulator", config: "Configuration", staff: "Team", audit: "Audit log", ai: "AI and costs", signOut: "Sign out", command: "Command center", documents: "Documents", payments: "Payments", subscriptions: "Subscriptions", incidents: "Incidents", clients: "Clients", identities: "Identities", pilotage: "Steering", system: "SYSTEM" },
+  nav: { dashboard: "Dashboard", organizations: "Organisations", conversations: "Conversations", simulator: "Simulator", config: "Configuration", staff: "Team", audit: "Audit log", ai: "AI and costs", signOut: "Sign out", command: "Command center", documents: "Documents", payments: "Payments", subscriptions: "Subscriptions", incidents: "Incidents", clients: "Clients", identities: "Identities", pilotage: "Steering", data: "Data", system: "SYSTEM" },
   env: (e) => (e === "production" ? "Production" : e === "staging" ? "Staging" : "Local"),
   readOnly: "Read only (support role)",
   dashboard: {
@@ -183,6 +183,24 @@ export const adminEn: AdminMessages = {
     failures: "Failures by stage",
     noFailure: "No failure in the period.",
     cols: { task: "Task", calls: "Calls", failed: "Failures", cost: "Cost", stage: "Stage", count: "Count" },
+  },
+  data: {
+    title: "Data",
+    subtitle: "Users' export and deletion requests.",
+    requests: "Requests",
+    none: "No request.",
+    deletedOrg: "Deleted organisation",
+    cols: { date: "Received", org: "Organisation", kind: "Request", origin: "From", status: "State", note: "Note" },
+    kinds: { deletion: "Deletion", export: "Export" } as Record<string, string>,
+    origins: { chat: "Conversation", web: "Space", staff: "Team" } as Record<string, string>,
+    statuses: { pending: "To handle", done: "Done", rejected: "Rejected" } as Record<string, string>,
+    execute: "Carry out the deletion",
+    reject: "Reject",
+    executeConfirm: (org: string) => `Delete ${org}'s data: conversations, identities, media, drafts, clients without documents, presentation and logo. Issued documents and payments remain (legal obligation). Irreversible.`,
+    rejectConfirm: "Reject this request (holder not verified, duplicate request…). The reason is written to the log.",
+    done: (messages: number, kept: number, files: number) => `Deletion done: ${messages} messages, ${files} files erased; ${kept} issued documents kept.`,
+    rejected: "Request rejected.",
+    help: "Check that the request comes from the holder (same number, same address) before carrying it out. Nothing can be returned afterwards.",
   },
   orgs: {
     notSet: "Not set",

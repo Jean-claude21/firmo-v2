@@ -92,7 +92,7 @@ export function decideSimple(message: string, ctx: Pick<TurnContext, "draft">): 
   const base: TurnDecision = { intent: "other", corrections: [], reply: null, searchQuery: null, targetType: null, startNewDocument: false };
   const t = message.trim().toLowerCase();
   if (/^(bonjour|bonsoir|salut|hello|hi|coucou|bjr)\b/.test(t) && !/\d/.test(t)) return { ...base, intent: "greeting" };
-  if (/suppression de mes donn[ée]es/.test(t)) return { ...base, intent: "delete_data" };
+  if (/suppression de mes donn[ée]es|delet(e|ion of) my data/.test(t)) return { ...base, intent: "delete_data" };
   if (readSimple(message).sections.length) return { ...base, intent: "source", startNewDocument: !ctx.draft };
   return base;
 }

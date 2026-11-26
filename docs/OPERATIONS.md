@@ -53,7 +53,10 @@ Projet `firmo`, configs `stg` et `prd`. Les clés personnelles (OpenAI…) sont 
 | `MONEROO_SECRET_KEY`, `MONEROO_WEBHOOK_SECRET` | paiement de l'abonnement (Moneroo) |
 | `CHARIOW_API_KEY`, `CHARIOW_PULSE_SECRET` | paiement de l'abonnement (Chariow, fournisseur de la v1) |
 | `ERROR_REPORTING_DSN` | Sentry ou GlitchTip |
-| `VITE_WHATSAPP_NUMBER`, `VITE_TELEGRAM_BOT` | variables de construction du site (boutons « Commencer ») |
+| `VITE_WHATSAPP_NUMBER`, `VITE_TELEGRAM_BOT` | variables de construction du site (boutons « Commencer », liens vers la conversation) |
+| `VITE_PUBLISHER_NAME`, `VITE_PUBLISHER_DETAILS` | éditeur affiché sur Conditions et Confidentialité (rien d'affiché sans valeur) |
+| `VITE_SUPPORT_EMAIL`, `VITE_SUPPORT_WHATSAPP`, `VITE_SUPPORT_HOURS` | page Contact (seuls les canaux renseignés sont affichés) |
+| `POSTHOG_PROJECT_KEY`, `POSTHOG_HOST` | relais des événements (sans clé : aucun envoi) |
 
 ## Déployer le staging
 

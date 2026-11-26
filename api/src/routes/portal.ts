@@ -14,6 +14,7 @@ import type { RenderService } from "../render/service.js";
 import { pgDocumentStore } from "../documents/store.js";
 import { presentationSample } from "../voix/document.js";
 import { buildFormatDocument, FORMAT_OPTIONS, type FormatOption } from "../portal/formats.js";
+import { zip } from "../lib/zip.js";
 
 // Espace artisan (ART-1 à ART-5) et page publique du document (ART-7). Le web envoie ce que
 // l'artisan tape ; montants et transitions sont décidés en SQL.
@@ -520,6 +521,55 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
         currency: { code: p.currency, minorUnits: p.minor_units, symbol: p.symbol, symbolBefore: p.symbol_before, thousandsSeparator: p.thousands_separator, decimalSeparator: p.decimal_separator },
       })),
     }, 200, { "Cache-Control": "public, max-age=300" });
+  });
+
+  // ------------------------------------------------------------- export des données (P-82)
+  // Tout ce que l'artisan a mis dans Firmo, téléchargé d'un coup : données (JSON), liste des
+  // documents (CSV) et PDF des documents émis. La demande est journalisée.
+  app.get("/v1/portal/export", auth, async (c) => {
+    const id = org(c);
+    const o = await sqlOne<Row>(d.pool, `select name, trade_label, country_code, currency_code, locale, phone, email, address, legal_ids,
+        tax_registered, brand_color, template_code, payment_methods, footer_note, created_at from public.organizations where id = $1`, [id]);
+    const [clients, clauses, ids] = await Promise.all([
+      sql<Row>(d.pool, "select name, phone, email, address, legal_id, created_at from public.clients where org_id = $1 order by name", [id]),
+      sql<Row>(d.pool, "select title, body, is_default, active from public.clauses where org_id = $1 order by position", [id]),
+      sql<{ id: string }>(d.pool, "select id from public.documents where org_id = $1 order by created_at", [id]),
+    ]);
+    const docs = [];
+    for (const r of ids) docs.push(await d.documents.get(id, r.id));
+    const files: Array<{ name: string; data: Buffer }> = [];
+    const strip = (doc: DocumentView) => {
+      const { orgId: _o, renderVersion: _r, blockers: _b, ...rest } = doc;
+      return rest;
+    };
+    files.push({ name: "firmo/donnees.json", data: Buffer.from(JSON.stringify({ exportedAt: new Date().toISOString(), organization: o, clients, clauses, documents: docs.map(strip) }, null, 2)) });
+    const csvCell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [["numero", "type", "statut", "client", "objet", "total_minor", "paye_minor", "devise", "emis_le"].join(";"),
+      ...docs.map((x) => [x.number, x.type, x.status, x.client.name, x.title, x.totalMinor, x.paidMinor, x.currency.code, x.issueDate].map(csvCell).join(";"))].join("\r\n");
+    files.push({ name: "firmo/documents.csv", data: Buffer.from(`\uFEFF${csv}`, "utf8") });
+    for (const x of docs) {
+      if (x.status === "draft") continue;
+      const rendered = await d.render.current(x.id);
+      if (!rendered) continue;
+      const pdf = await d.render.file(rendered.pdfKey).catch(() => null);
+      if (pdf) files.push({ name: `firmo/pdf/${(x.number ?? x.id).replace(/[^A-Za-z0-9._-]+/g, "-")}.pdf`, data: pdf });
+    }
+    // Deux requêtes : la demande créée par la fonction n'est visible qu'après elle.
+    const request = await sqlOne<{ id: string }>(d.pool, "select app.request_data($1, null, 'export', 'web') as id", [id]);
+    await sql(d.pool, "update public.data_requests set status = 'done', handled_at = now(), handled_by = 'self' where id = $1", [request.id]);
+    const day = new Date().toISOString().slice(0, 10);
+    return c.body(new Uint8Array(zip(files)), 200, { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="firmo-export-${day}.zip"`, "Cache-Control": "no-store" });
+  });
+
+  // P-83 : demande de suppression depuis l'espace (même traitement que depuis le chat).
+  app.get("/v1/portal/data-requests", auth, async (c) => {
+    const rows = await sql<Row>(d.pool, "select kind, status, origin, created_at, handled_at from public.data_requests where org_id = $1 order by created_at desc limit 20", [org(c)]);
+    return c.json({ items: rows.map((r) => ({ kind: r.kind, status: r.status, origin: r.origin, createdAt: r.created_at.toISOString(), handledAt: r.handled_at?.toISOString?.() ?? null })) });
+  });
+  app.post("/v1/portal/data-requests", auth, async (c) => {
+    await parseJson(c, z.object({ kind: z.literal("deletion") }));
+    const r = await sqlOne<{ id: string }>(d.pool, "select app.request_data($1, null, 'deletion', 'web') as id", [org(c)]);
+    return c.json({ id: r.id }, 201);
   });
 
   // ------------------------------------------------------------- formats (P-67)

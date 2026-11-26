@@ -16,6 +16,8 @@ export interface AdminV1Deps {
   webUrl: string;
   /** Lien d'accès à l'espace d'une organisation (support). */
   portalLink: (orgId: string) => Promise<{ token: string; minutes: number }>;
+  /** Stockage : médias et logo effacés après une suppression (P-83). */
+  files: { delete(key: string): Promise<void> };
 }
 
 type Row = Record<string, any>;
@@ -275,6 +277,35 @@ export function registerAdminV1Routes(app: Hono<{ Variables: SessionVariables }>
   app.post("/v1/admin/identities/:id/staff", admin, async (c) => {
     const b = await parseJson(c, z.object({ staffUserId: z.string().uuid(), allow: z.boolean() }));
     await sql(d.pool, "select app.authorize_staff_identity($1, $2, $3, $4)", [actor(c), b.staffUserId, c.req.param("id"), b.allow]);
+    return c.json({ ok: true });
+  });
+
+  // ------------------------------------------------------------- P-83 demandes sur les données
+  app.get("/v1/admin/data-requests", staff, async (c) => {
+    const rows = await sql<Row>(d.pool, `select r.id, r.org_id, o.name as org_name, o.status as org_status, r.kind, r.status, r.origin, r.note, r.created_at, r.handled_at, s.email as handled_by
+      from public.data_requests r join public.organizations o on o.id = r.org_id left join public.staff s on s.user_id::text = r.handled_by
+      order by (r.status = 'pending') desc, r.created_at desc limit 100`);
+    return c.json({ items: rows.map((r) => ({ id: r.id, orgId: r.org_id, orgName: r.org_name, orgStatus: r.org_status, kind: r.kind, status: r.status, origin: r.origin, note: r.note, createdAt: iso(r.created_at), handledAt: iso(r.handled_at), handledBy: r.handled_by ?? (r.status === "done" && r.kind === "export" ? "self" : null) })) });
+  });
+  app.post("/v1/admin/data-requests/:id/execute", admin, async (c) => {
+    const b = await parseJson(c, z.object({ reason }));
+    const r = await sqlOne<{ v: { media_keys: string[]; logo_key: string | null; counts: Record<string, number> } }>(d.pool, "select app.execute_deletion($1, $2, $3) as v", [actor(c), c.req.param("id"), b.reason]);
+    // Les fichiers suivent la base : un fichier déjà absent n'empêche rien.
+    const keys = [...(r.v.media_keys ?? []), ...(r.v.logo_key ? [r.v.logo_key] : [])];
+    let removed = 0;
+    for (const k of keys) {
+      try {
+        await d.files.delete(k);
+        removed++;
+      } catch {
+        // déjà supprimé
+      }
+    }
+    return c.json({ counts: r.v.counts, filesRemoved: removed });
+  });
+  app.post("/v1/admin/data-requests/:id/reject", admin, async (c) => {
+    const b = await parseJson(c, z.object({ reason }));
+    await sql(d.pool, "select app.reject_data_request($1, $2, $3)", [actor(c), c.req.param("id"), b.reason]);
     return c.json({ ok: true });
   });
 

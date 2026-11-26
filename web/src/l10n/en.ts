@@ -113,6 +113,17 @@ export const en: Messages = {
     nav: { dashboard: "Home", documents: "Documents", clients: "Clients", profile: "Presentation", subscription: "Plan" },
     menu: "Menu",
     typeTag: { quote: "QUO", proforma: "PRO", invoice: "INV", receipt: "REC", delivery_note: "DN" } as Record<string, string>,
+    myData: {
+      title: "Your data",
+      hint: "Export, or ask for deletion",
+      exportText: "Download everything you put in Firmo: your documents as PDF, the list of your documents (spreadsheet) and all your data.",
+      export: "Export my data",
+      deleteText: "You can ask for your data to be deleted. Issued documents are kept for the time required by law.",
+      learnMore: "What is deleted, what remains",
+      delete: "Ask for deletion",
+      deleteConfirm: "Ask for your data to be deleted? Export it first: after deletion, nothing can be returned.",
+      pending: (d: string) => `Your deletion request of ${d} is being handled. You will get the confirmation in your messaging app.`,
+    },
     newDocument: {
       byMessage: "Fastest: by message",
       byMessageHint: "A voice note, a photo of your sheet or a text. Firmo prepares the document.",
