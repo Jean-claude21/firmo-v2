@@ -22,6 +22,7 @@ for (const [label, viewport] of Object.entries({ desktop: { width: 1440, height:
   check(!overflow, `${label} pas de débordement horizontal`);
   await page.getByRole("radio", { name: "Couleur #1F6F43" }).click();
   check(await page.locator(`img[src="/landing/doc-1f6f43.webp"]`).waitFor({ timeout: 5000 }).then(() => true, () => false), `${label} le choix de couleur montre le vrai rendu`);
+  check(await page.getByText("Toucher à l'argent de tes clients.").isVisible(), `${label} promesse : jamais l'argent des clients`);
   check(errors.length === 0, `${label} aucune erreur`, errors.join(" | "));
   await shot(page, `landing-${label}`);
 }

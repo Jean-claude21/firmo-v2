@@ -58,7 +58,7 @@ JWT Firmo signés HS256 avec `FIRMO_SESSION_SECRET`.
    tâche `process_message`.
 2. Worker : média téléchargé dans `inbox`, transcription si vocal.
 3. Intention (règles rapides, puis IA) : nouveau document, correction, validation, conversion,
-   paiement noté, liste, réglages, aide.
+   liste, réglages, aide (un paiement annoncé reçoit une réponse : Firmo ne le note pas).
 4. Lecture structurée (schéma zod) ; **garde anti-invention** : un nombre lu dans un texte ou une
    transcription doit y figurer, sinon la valeur devient « à confirmer ».
 5. Brouillon et corrections en SQL ; réponses rédigées par `voix` (fr, en).

@@ -15,8 +15,11 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as ConditionsRouteImport } from './routes/conditions'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as FormatsRouteImport } from './routes/formats'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as SuppressionDonneesRouteImport } from './routes/suppression-donnees'
+import { Route as TraitementDonneesRouteImport } from './routes/traitement-donnees'
 import { Route as AccesTokenRouteImport } from './routes/acces.$token'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAbonnementsRouteImport } from './routes/admin.abonnements'
@@ -77,14 +80,29 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FormatsRoute = FormatsRouteImport.update({
   id: '/formats',
   path: '/formats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuppressionDonneesRoute = SuppressionDonneesRouteImport.update({
   id: '/suppression-donnees',
   path: '/suppression-donnees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraitementDonneesRoute = TraitementDonneesRouteImport.update({
+  id: '/traitement-donnees',
+  path: '/traitement-donnees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccesTokenRoute = AccesTokenRouteImport.update({
@@ -240,8 +258,11 @@ export interface FileRoutesByFullPath {
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/formats': typeof FormatsRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/suppression-donnees': typeof SuppressionDonneesRoute
+  '/traitement-donnees': typeof TraitementDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/clients': typeof AdminClientsRoute
@@ -277,8 +298,11 @@ export interface FileRoutesByTo {
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/formats': typeof FormatsRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/suppression-donnees': typeof SuppressionDonneesRoute
+  '/traitement-donnees': typeof TraitementDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/clients': typeof AdminClientsRoute
@@ -317,8 +341,11 @@ export interface FileRoutesById {
   '/conditions': typeof ConditionsRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/formats': typeof FormatsRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/suppression-donnees': typeof SuppressionDonneesRoute
+  '/traitement-donnees': typeof TraitementDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/clients': typeof AdminClientsRoute
@@ -358,8 +385,11 @@ export interface FileRouteTypes {
     | '/conditions'
     | '/confidentialite'
     | '/contact'
+    | '/cookies'
     | '/formats'
+    | '/mentions-legales'
     | '/suppression-donnees'
+    | '/traitement-donnees'
     | '/acces/$token'
     | '/admin/abonnements'
     | '/admin/clients'
@@ -395,8 +425,11 @@ export interface FileRouteTypes {
     | '/conditions'
     | '/confidentialite'
     | '/contact'
+    | '/cookies'
     | '/formats'
+    | '/mentions-legales'
     | '/suppression-donnees'
+    | '/traitement-donnees'
     | '/acces/$token'
     | '/admin/abonnements'
     | '/admin/clients'
@@ -434,8 +467,11 @@ export interface FileRouteTypes {
     | '/conditions'
     | '/confidentialite'
     | '/contact'
+    | '/cookies'
     | '/formats'
+    | '/mentions-legales'
     | '/suppression-donnees'
+    | '/traitement-donnees'
     | '/acces/$token'
     | '/admin/abonnements'
     | '/admin/clients'
@@ -474,8 +510,11 @@ export interface RootRouteChildren {
   ConditionsRoute: typeof ConditionsRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   ContactRoute: typeof ContactRoute
+  CookiesRoute: typeof CookiesRoute
   FormatsRoute: typeof FormatsRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   SuppressionDonneesRoute: typeof SuppressionDonneesRoute
+  TraitementDonneesRoute: typeof TraitementDonneesRoute
   AccesTokenRoute: typeof AccesTokenRoute
   DTokenRoute: typeof DTokenRoute
   PaiementSimulateurIdRoute: typeof PaiementSimulateurIdRoute
@@ -525,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/formats': {
       id: '/formats'
       path: '/formats'
@@ -532,11 +578,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/suppression-donnees': {
       id: '/suppression-donnees'
       path: '/suppression-donnees'
       fullPath: '/suppression-donnees'
       preLoaderRoute: typeof SuppressionDonneesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traitement-donnees': {
+      id: '/traitement-donnees'
+      path: '/traitement-donnees'
+      fullPath: '/traitement-donnees'
+      preLoaderRoute: typeof TraitementDonneesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/acces/$token': {
@@ -820,8 +880,11 @@ const rootRouteChildren: RootRouteChildren = {
   ConditionsRoute: ConditionsRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
   ContactRoute: ContactRoute,
+  CookiesRoute: CookiesRoute,
   FormatsRoute: FormatsRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   SuppressionDonneesRoute: SuppressionDonneesRoute,
+  TraitementDonneesRoute: TraitementDonneesRoute,
   AccesTokenRoute: AccesTokenRoute,
   DTokenRoute: DTokenRoute,
   PaiementSimulateurIdRoute: PaiementSimulateurIdRoute,

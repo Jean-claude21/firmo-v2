@@ -8,7 +8,7 @@ import { type FormatScenario, formatWords } from "../voix/formats.js";
 // Rien ne reste en base ; le résultat est mis en cache (le contenu ne dépend que des options).
 
 export const FORMAT_OPTIONS = [
-  "client", "site", "delivery", "groups", "subtotals", "labor", "transport", "discount", "tax", "deposit", "payments",
+  "client", "site", "delivery", "groups", "subtotals", "labor", "transport", "discount", "tax", "deposit",
   "conditions", "validity", "warranty",
 ] as const;
 export type FormatOption = (typeof FORMAT_OPTIONS)[number];
@@ -63,7 +63,6 @@ export async function buildFormatDocument(pool: pg.Pool, scenario: FormatScenari
     const docId = await store.createDraftContent(org, scenario === "facture" ? "invoice" : "quote", content, "web");
     if (on("client")) await store.setClient(org, docId, w.client.name, { phone: w.client.phone });
     await store.issue(org, docId, null);
-    if (scenario === "facture" && on("payments")) await store.recordPayment(org, docId, money(w.payment.amount), null, w.payment.method, null);
     const view = await store.get(org, docId);
     const issuer = (await client.query<{ issuer: Record<string, unknown> }>("select app.issuer_snapshot($1) as issuer", [org])).rows[0]!.issuer;
     return { ...view, issuer };

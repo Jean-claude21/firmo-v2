@@ -7,7 +7,7 @@ document qu'il n'a pas les moyens de produire seul. Il perd des marchés sans sa
 
 **Firmo est le bureau administratif du petit professionnel, dans sa messagerie.** Il dicte sa vente,
 envoie la photo de son devis papier ou l'écrit ; Firmo lui renvoie un document professionnel, le
-suit jusqu'à l'acceptation, la facture et le reçu.
+suit jusqu'à l'acceptation et la facture. Le client paie l'artisan directement.
 
 ## 2. La règle qui gouverne tout
 
@@ -36,19 +36,19 @@ Firmo ne propose jamais un prix. Il lit, structure, met en page et demande ce qu
 - **DOC-1** Lecture d'une dictée, d'un texte ou d'une photo en lignes (désignation, quantité, unité,
   prix unitaire), chaque valeur marquée « lue » ou « à confirmer ».
 - **DOC-2** Corrections en un mot (« ligne 2 prix 15000 », « enlève la 3 », « client Hôtel du Lac »).
-- **DOC-3** Types configurables : devis, facture proforma, facture, reçu, bon de livraison.
+- **DOC-3** Types configurables : devis, facture proforma, facture, bon de livraison.
 - **DOC-4** Totaux, remise, taxes et numérotation sans trou calculés en SQL.
 - **DOC-5** Émission : version immuable, PDF + aperçu PNG, lien de partage et QR code.
-- **DOC-6** Cycle : devis envoyé → accepté ou refusé par le client (lien) → facture → paiements notés
-  par l'artisan (acompte, solde) → reçu.
+- **DOC-6** Cycle : devis envoyé → accepté ou refusé par le client (lien) → proforma au besoin →
+  facture. L'encaissement reste à l'artisan : Firmo ne note aucun paiement (décision 0008).
 - **DOC-7** Mémoire : clients et lignes habituelles (désignation, unité), jamais de prix proposé.
 - **DOC-8** Trois modèles de mise en page (Classique, Moderne, Épuré), couleur tirée du logo,
   montant en lettres, mentions légales du pays, moyens de paiement de l'artisan.
 
 ### Espace artisan (ART)
 - **ART-1** Accès par lien signé depuis le chat, sans mot de passe.
-- **ART-2** Tableau de bord : documents du mois, en attente, montants facturés et encaissés.
-- **ART-3** Documents : liste, filtres, aperçu, actions (envoyer, convertir, noter un paiement).
+- **ART-2** Tableau de bord : documents du mois, devis en attente, montants facturés.
+- **ART-3** Documents : liste, filtres, aperçu, actions (envoyer, convertir, dupliquer, réviser).
 - **ART-4** Clients.
 - **ART-5** Profil et en-tête : nom, métier, pays, coordonnées, identifiants légaux, logo, couleur,
   modèle, moyens de paiement, mentions.

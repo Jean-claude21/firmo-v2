@@ -1,7 +1,7 @@
 import type pg from "pg";
 import type { ObjectStore } from "../lib/storage.js";
 
-// Tâches de fond de la spec 014 : relais des événements vers PostHog (P-80) et suppression des
+// Tâches de fond de la spec 014 : relais des événements vers Umami (P-80, décision du porteur) et suppression des
 // médias sources après la durée réglée (P-81). Chaque fournisseur est derrière une interface.
 
 export interface AnalyticsEvent {
@@ -11,27 +11,30 @@ export interface AnalyticsEvent {
   timestamp: string;
 }
 
-/** Destination des événements (PostHog en production, double en test). */
+/** Destination des événements (Umami en production, double en test). */
 export interface AnalyticsSink {
   send(events: AnalyticsEvent[]): Promise<void>;
 }
 
-/** PostHog (API /batch/). Aucune clé : aucun envoi (le relais ne démarre pas). */
-export function posthogSink(config: { host: string; projectKey: string; fetchImpl?: typeof fetch }): AnalyticsSink {
+/**
+ * Umami (installé par Kete sur son serveur) : un événement par appel à /api/send. Les propriétés
+ * sont déjà filtrées en SQL (aucun nom, téléphone, prix ni contenu). Sans identifiant : aucun envoi.
+ */
+export function umamiSink(config: { url: string; websiteId: string; hostname?: string; fetchImpl?: typeof fetch }): AnalyticsSink {
   const send = config.fetchImpl ?? fetch;
-  const url = `${(config.host || "https://eu.i.posthog.com").replace(/\/$/, "")}/batch/`;
+  const url = `${config.url.replace(/\/$/, "")}/api/send`;
   return {
     async send(events) {
-      const res = await send(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: config.projectKey,
-          batch: events.map((e) => ({ event: e.event, distinct_id: e.distinctId, properties: { ...e.properties, $lib: "firmo-api" }, timestamp: e.timestamp })),
-        }),
-        signal: AbortSignal.timeout(20_000),
-      });
-      if (!res.ok) throw new Error(`PostHog ${res.status}`);
+      for (const e of events) {
+        const res = await send(url, {
+          method: "POST",
+          // Umami écarte les robots : l'en-tête identifie l'API sans rien dire de l'artisan.
+          headers: { "Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (compatible; FirmoAPI/1.0)" },
+          body: JSON.stringify({ type: "event", payload: { website: config.websiteId, hostname: config.hostname ?? "api.firmo", url: "/serveur", name: e.event, data: e.properties } }),
+          signal: AbortSignal.timeout(20_000),
+        });
+        if (!res.ok) throw new Error(`Umami ${res.status}`);
+      }
     },
   };
 }

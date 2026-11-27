@@ -34,7 +34,7 @@ Légende : ✅ fait et vérifié · ⬜ à faire · ➕ la v2 fait plus que la v
 | P-16 | Paiements simples d'une facture (montant, date, moyen, référence), solde ; jamais au-delà du total | pgTAP | ✅ |
 | P-17 | Aucun document émis tant qu'une quantité ou un prix reste nul ou à confirmer | pgTAP | ✅ |
 | P-18 | Les **dix cas de référence** v1 donnent exactement leurs totaux attendus | test API | ✅ |
-| ➕ | Reçu de paiement, bon de livraison, décision du client en ligne, montant en lettres, QR | conservé | ✅ |
+| ➕ | Bon de livraison, décision du client en ligne, montant en lettres, QR (reçu de paiement retiré : décision 0008) | conservé | ✅ |
 
 ## 2. PDF (spec 009 ✅)
 
@@ -116,7 +116,7 @@ Légende : ✅ fait et vérifié · ⬜ à faire · ➕ la v2 fait plus que la v
 
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
-| P-80 | Événements envoyés à **PostHog** (sans nom, téléphone, prix, contenu) ; sans clé : rien n'est envoyé | test | ✅ (PostHog réel à brancher) |
+| P-80 | Événements envoyés à **Umami** (décision du porteur, 2026-11-27) (sans nom, téléphone, prix, contenu) ; sans clé : rien n'est envoyé | test | ✅ |
 | P-81 | Audios et photos sources supprimés après une durée configurable | pgTAP + worker | ✅ |
 | P-82 | Export des données depuis l'espace artisan | test | ✅ |
 | P-83 | Suppression des données sur demande (chat, espace) avec conservation légale limitée | pgTAP | ✅ |

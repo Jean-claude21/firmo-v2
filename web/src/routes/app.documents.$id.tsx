@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Check, Copy, Download, FileText, Loader2, MessageCircle, MoreVertical, Receipt, Send, Wallet, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, Download, FileText, Loader2, MessageCircle, MoreVertical, Send, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Amount, ConditionsTab, DetailTab, SaveIndicator, TotalsTab, useAutosave } from "@/components/document-editor";
 import { type DocDraft, fromDocument, toInput } from "@/components/document-model";
@@ -147,61 +147,6 @@ function ActionsMenu({ doc, busy, run, onPdf }: { doc: DocumentDetail; busy: str
   );
 }
 
-function Payments({ doc, busy, run }: { doc: DocumentDetail; busy: string | null; run: (name: string, path: string, body?: unknown, after?: (r: any) => void) => void }) {
-  const { t, locale } = useI18n();
-  const T = t.app.document;
-  const cur = doc.currency;
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ amount: "", method: "", paidOn: new Date().toISOString().slice(0, 10) });
-  const balance = (BigInt(doc.totalMinor) - BigInt(doc.paidMinor)).toString();
-  return (
-    <section className="border-t-[1.5px] border-ink">
-      <div className="flex min-h-14 items-center justify-between px-4 sm:px-6">
-        <h3 className="text-[20px] font-semibold">{T.payments}</h3>
-        {doc.status !== "paid" ? <span className="text-[15px]">{T.balance} <Amount minor={balance} cur={cur} strong /></span> : <StatusBadge status="paid" />}
-      </div>
-      {doc.payments.length === 0 && <p className="border-t border-line px-4 py-4 text-muted sm:px-6">{T.noPayments}</p>}
-      {doc.payments.map((p) => (
-        <div key={p.id} className="flex min-h-14 items-center gap-3 border-t border-line px-4 sm:px-6">
-          <div className="min-w-0 flex-1">
-            <Amount minor={p.amountMinor} cur={cur} strong />
-            <p className="text-[14px] text-muted">{date(p.paidOn, locale)}{p.method ? ` · ${p.method}` : ""}</p>
-          </div>
-          {p.receiptId ? (
-            <Link to="/app/documents/$id" params={{ id: p.receiptId }} className="min-h-11 py-2.5 font-semibold underline underline-offset-4">{T.receiptDone}</Link>
-          ) : (
-            <Button variant="outline" className="min-h-11 px-3" icon={<Receipt className="size-4" />} loading={busy === `r-${p.id}`} onClick={() => run(`r-${p.id}`, `payments/${p.id}/receipt`)}>{T.receipt}</Button>
-          )}
-        </div>
-      ))}
-      {doc.status !== "paid" && !open && (
-        <div className="border-t border-line px-4 py-4 sm:px-6">
-          <Button variant="outline" className="w-full" icon={<Wallet className="size-5" />} onClick={() => setOpen(true)}>{T.recordPayment}</Button>
-        </div>
-      )}
-      {open && (
-        <form className="space-y-3 border-t border-line px-4 py-4 sm:px-6" onSubmit={(e) => {
-          e.preventDefault();
-          run("pay", `documents/${doc.id}/payments`, { amount: form.amount, method: form.method || null, paidOn: form.paidOn }, () => {
-            setOpen(false);
-            setForm({ ...form, amount: "", method: "" });
-          });
-        }}>
-          <Field label={`${T.amount} (${cur.symbol})`}><Input inputMode="decimal" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="font-mono" /></Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={T.paidOn}><Input type="date" value={form.paidOn} onChange={(e) => setForm({ ...form, paidOn: e.target.value })} /></Field>
-            <Field label={T.method} optional><Input value={form.method} placeholder={T.methodPlaceholder} onChange={(e) => setForm({ ...form, method: e.target.value })} maxLength={80} /></Field>
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" loading={busy === "pay"}>{T.save}</Button>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{t.common.cancel}</Button>
-          </div>
-        </form>
-      )}
-    </section>
-  );
-}
-
 function DocumentPage() {
   const { t, locale } = useI18n();
   const T = t.app.document;
@@ -326,7 +271,6 @@ function DocumentPage() {
       {tab === "detail" && <DetailTab draft={draft} server={server} cur={cur} me={me.data} readOnly={readOnly} update={update} />}
       {tab === "conditions" && <ConditionsTab draft={draft} update={update} me={me.data} readOnly={readOnly} clauses={clauses.data?.items ?? []} />}
       {tab === "totals" && <TotalsTab draft={draft} server={server} cur={cur} readOnly={readOnly} update={update} />}
-      {!isDraft && server.payable && ["issued", "partially_paid", "paid"].includes(server.status) && <Payments doc={server} busy={busy} run={run} />}
 
       <div className="fixed inset-x-0 bottom-[60px] z-20 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)] lg:bottom-0">
         <div className="mx-auto flex max-w-[960px] gap-2 px-3 py-3 sm:px-6">

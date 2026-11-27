@@ -184,13 +184,13 @@ export function pgConversationStore(pool: pg.Pool) {
       return rows[0]?.e ?? false;
     },
 
-    async identities(orgId: string): Promise<Array<{ identityId: string; channel: string; to: string }>> {
-      const rows = await sql<{ id: string; channel: string; external_id: string }>(
+    async identities(orgId: string): Promise<Array<{ identityId: string; channel: string; to: string; lastSeenAt: Date }>> {
+      const rows = await sql<{ id: string; channel: string; external_id: string; last_seen_at: Date }>(
         pool,
-        "select id, channel, external_id from public.channel_identities where org_id = $1 order by last_seen_at desc",
+        "select id, channel, external_id, last_seen_at from public.channel_identities where org_id = $1 order by last_seen_at desc",
         [orgId],
       );
-      return rows.map((r) => ({ identityId: r.id, channel: r.channel, to: r.external_id }));
+      return rows.map((r) => ({ identityId: r.id, channel: r.channel, to: r.external_id, lastSeenAt: r.last_seen_at }));
     },
 
     async markDelivered(id: string) {

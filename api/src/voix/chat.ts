@@ -108,10 +108,8 @@ export interface ChatWords {
   duplicated: (from: string) => string;
   sharePrompt: (number: string, url: string) => string;
   revised: (number: string) => string;
-  paymentRecorded: (amount: string, number: string, balance: string, paid: boolean) => string;
+  paymentsNotTracked: string;
   noInvoice: string;
-  receiptIssued: (number: string) => string;
-  noPayment: string;
   decision: (number: string, accepted: boolean) => string;
   noQuote: string;
   deletionRecorded: string;
@@ -244,10 +242,8 @@ const fr: ChatWords = {
   duplicated: (from) => `J'ai copié ${from} dans un nouveau brouillon.`,
   sharePrompt: (n, url) => `Voici le lien de ${n} à transférer : ${url}`,
   revised: (n) => `${n} est déjà émis : j'en prépare une révision.`,
-  paymentRecorded: (a, n, b, paid) => paid ? `Paiement de ${a} noté : la facture ${n} est soldée. Écris « reçu » pour envoyer un reçu.` : `Paiement de ${a} noté sur ${n}. Reste à payer : ${b}. Écris « reçu » pour envoyer un reçu.`,
+  paymentsNotTracked: "Firmo ne suit pas les paiements : ton client te paie directement, avec les moyens imprimés sur ton document. Je peux préparer le devis, la proforma ou la facture.",
   noInvoice: "Je n'ai pas trouvé de facture à régler. Donne-moi son numéro.",
-  receiptIssued: (n) => `Je prépare le reçu ${n}.`,
-  noPayment: "Je ne vois aucun paiement noté pour faire un reçu. Écris d'abord le paiement, par exemple « payé 50 000 ».",
   decision: (n, ok) => ok ? `${n} est noté comme accepté. Écris « facture » pour la préparer.` : `${n} est noté comme refusé.`,
   noQuote: "Je n'ai pas trouvé ce devis.",
   deletionRecorded: "C'est noté : ta demande de suppression est enregistrée. Je te confirme ici quand elle est traitée.",
@@ -341,10 +337,8 @@ const en: ChatWords = {
   duplicated: (from) => `I copied ${from} into a new draft.`,
   sharePrompt: (n, url) => `Here is the link of ${n} to forward: ${url}`,
   revised: (n) => `${n} is already issued: I'm preparing a revision.`,
-  paymentRecorded: (a, n, b, paid) => paid ? `Payment of ${a} recorded: invoice ${n} is settled. Write "receipt" to send a receipt.` : `Payment of ${a} recorded on ${n}. Balance due: ${b}. Write "receipt" to send a receipt.`,
+  paymentsNotTracked: "Firmo does not track payments: your client pays you directly, using the methods printed on your document. I can prepare the quote, pro forma or invoice.",
   noInvoice: "I couldn't find an invoice to settle. Give me its number.",
-  receiptIssued: (n) => `Preparing receipt ${n}.`,
-  noPayment: "I see no recorded payment for a receipt. Write the payment first, e.g. \"paid 50,000\".",
   decision: (n, ok) => ok ? `${n} marked as accepted. Write "invoice" to prepare it.` : `${n} marked as declined.`,
   noQuote: "I couldn't find that quote.",
   deletionRecorded: "Noted: your deletion request is recorded. I'll confirm here once it's done.",

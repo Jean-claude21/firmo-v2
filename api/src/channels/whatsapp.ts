@@ -95,6 +95,13 @@ export interface WhatsappOptions {
   apiVersion: string;
   /** Identifiants des Flows publiés chez Meta, par formulaire (ex. { profile: "123…" }). */
   flows: Record<string, string>;
+  /** Modèle approuvé chez Meta pour les avis hors fenêtre de 24 h (un paramètre : le texte). Vide : aucun. */
+  noticeTemplate?: string;
+}
+
+/** Un paramètre de modèle WhatsApp n'accepte ni saut de ligne, ni tabulation, ni plus de 4 espaces. */
+export function templateParam(text: string): string {
+  return text.replace(/\s*\n+\s*/g, " — ").replace(/\t/g, " ").replace(/ {2,}/g, " ").trim().slice(0, 1000);
 }
 
 export function whatsappChannel(options: WhatsappOptions): Channel {
@@ -122,8 +129,21 @@ export function whatsappChannel(options: WhatsappOptions): Channel {
     return json.id;
   }
 
+  const template = options.noticeTemplate?.trim() ?? "";
   return {
     code: "whatsapp",
+    replyWindowHours: 24,
+    ...(template
+      ? {
+          sendNotice(to: string, text: string, locale: string) {
+            return send({
+              to,
+              type: "template",
+              template: { name: template, language: { code: locale.startsWith("en") ? "en" : "fr" }, components: [{ type: "body", parameters: [{ type: "text", text: templateParam(text) }] }] },
+            });
+          },
+        }
+      : {}),
     sendText(to, text, buttons?: Button[]) {
       // Boutons : 3 au plus, titre de 20 caractères, corps de 1024 caractères.
       if (buttons?.length && text.length <= 1024) {

@@ -280,6 +280,14 @@ export function registerAdminV1Routes(app: Hono<{ Variables: SessionVariables }>
     return c.json({ ok: true });
   });
 
+  // Changement de numéro (spec 015) : la nouvelle identité rejoint l'organisation d'origine ;
+  // refusé si le nouveau numéro a déjà des documents. Motif obligatoire, inscrit au journal.
+  app.post("/v1/admin/identities/:id/move", admin, async (c) => {
+    const b = await parseJson(c, z.object({ targetOrgId: z.string().uuid(), reason }));
+    await sql(d.pool, "select app.move_identity($1, $2, $3, $4)", [actor(c), c.req.param("id"), b.targetOrgId, b.reason]);
+    return c.json({ ok: true });
+  });
+
   // ------------------------------------------------------------- P-83 demandes sur les données
   app.get("/v1/admin/data-requests", staff, async (c) => {
     const rows = await sql<Row>(d.pool, `select r.id, r.org_id, o.name as org_name, o.status as org_status, r.kind, r.status, r.origin, r.note, r.created_at, r.handled_at, s.email as handled_by

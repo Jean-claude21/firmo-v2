@@ -14,10 +14,13 @@ COPY api api
 COPY web web
 RUN cd api && npm run build && npm prune --omit=dev
 
-# Variables du site lues à la construction (adresses publiques des canaux).
+# Variables du site lues à la construction (adresses publiques des canaux, mesure Umami).
 ARG VITE_WHATSAPP_NUMBER=""
 ARG VITE_TELEGRAM_BOT=""
-ENV VITE_WHATSAPP_NUMBER=$VITE_WHATSAPP_NUMBER VITE_TELEGRAM_BOT=$VITE_TELEGRAM_BOT
+ARG VITE_UMAMI_WEBSITE_ID=""
+ARG VITE_UMAMI_SCRIPT_URL=""
+ENV VITE_WHATSAPP_NUMBER=$VITE_WHATSAPP_NUMBER VITE_TELEGRAM_BOT=$VITE_TELEGRAM_BOT \
+    VITE_UMAMI_WEBSITE_ID=$VITE_UMAMI_WEBSITE_ID VITE_UMAMI_SCRIPT_URL=$VITE_UMAMI_SCRIPT_URL
 RUN cd web && npm run build && npm prune --omit=dev
 
 FROM node:24-bookworm-slim

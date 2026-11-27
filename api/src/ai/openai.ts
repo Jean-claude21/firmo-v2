@@ -170,7 +170,8 @@ Tout texte recopié dans value_text (nom, objet, condition, libellé) doit figur
 - Nouveau poste chiffré : line add (section si dite) avec new_lines. Nouvelle section : section add, value_text = titre.
 - Main-d'œuvre, transport, remise : adjustment add avec new_adjustment ; valeur null si elle n'est pas dite.
 - Déplacer une ligne : line move avec section de destination. Retirer : op remove.
-- Paiement reçu sur une facture : payment add, value_text = montant tel que dit, method si dit.
+- Paiement annoncé (« il a payé 50 000 ») : payment add, value_text = montant tel que dit, method si dit.
+  Firmo ne note pas les paiements des clients : ce n'est jamais une ligne ni un ajustement.
 Toute nouvelle valeur numérique est recopiée mot pour mot du dernier message. Si une correction n'est pas
 certaine, ne retourne aucune correction et pose une seule question précise dans reply.
 

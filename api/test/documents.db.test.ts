@@ -17,7 +17,7 @@ describe.skipIf(!hasDatabase)("documents sur Postgres", () => {
     return id;
   }
 
-  it("brouillon → corrections → émission → partage → décision → facture → paiement → reçu", async () => {
+  it("brouillon → corrections → émission → partage → décision → facture, sans suivi de paiement", async () => {
     const orgId = await org();
     const draft = await docs.createDraft(orgId, "quote", [
       { label: "Porte isoplane", quantity: "2", unit: "unit", unitPriceMinor: null, toConfirm: ["unit_price"], source: "read" },
@@ -47,15 +47,12 @@ describe.skipIf(!hasDatabase)("documents sur Postgres", () => {
     expect(inv.number).toMatch(/^FAC-/);
     expect(inv.sourceNumber).toBe(issued.number);
 
-    const payment = await docs.recordPayment(orgId, invoice, "100000", null, "Espèces");
-    const receipt = await docs.issueReceipt(orgId, payment);
-    const rec = await docs.get(orgId, receipt);
-    expect(rec.type).toBe("receipt");
-    expect(rec.totalMinor).toBe("100000");
-    expect((await docs.get(orgId, invoice)).status).toBe("paid");
+    // Le client paie l'artisan directement : Firmo refuse de noter un paiement (0020).
+    await expect(docs.recordPayment(orgId, invoice, "100000", null, "Espèces")).rejects.toThrow(/paiements des clients/);
+    expect((await docs.get(orgId, invoice)).status).toBe("issued");
 
     const list = await docs.list(orgId);
-    expect(list.total).toBe(3);
+    expect(list.total).toBe(2);
     const ent = await docs.entitlement(orgId);
     expect(ent).toMatchObject({ kind: "trial", used: 2, remaining: 1 });
   });

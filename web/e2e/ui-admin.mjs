@@ -125,6 +125,34 @@ await page.getByPlaceholder(/Rechercher organisation/).first().fill("Froid Servi
 await page.waitForTimeout(1200);
 check(await page.getByRole("button", { name: /Froid Services Komla/ }).first().isVisible(), "P-77 recherche par nom");
 
+// ---------------------------------------------------------------- Chariow (spec 015)
+console.log("\nChariow dans la console (L-04)");
+await page.goto(`${BASE}/admin/paiements`, { waitUntil: "networkidle" });
+await page.waitForTimeout(900);
+check(await page.getByRole("heading", { name: "Paiement de l'abonnement : Chariow" }).isVisible(), "panneau Chariow affiché");
+check(await page.getByText(/\/v1\/billing\/webhooks\/chariow$/).first().isVisible(), "adresse du Pulse à copier");
+check(await page.getByText(/Vente réussie/).first().isVisible(), "étapes du Pulse");
+await shot(page, "adm-chariow");
+
+// ---------------------------------------------------------------- changement de numéro (spec 015)
+console.log("\nChangement de numéro (L-06)");
+const newExt = `e2e-nouveau-${Date.now().toString(36)}`;
+const newIdentity = db(`select identity_id from app.ensure_identity('simulator', '${newExt}', 'Nouveau numéro', '+22890000099', null)`);
+const newOrg = db(`select org_id from public.channel_identities where id = '${newIdentity}'`);
+await page.goto(`${BASE}/admin/identites`, { waitUntil: "networkidle" });
+await page.waitForTimeout(900);
+await page.locator("tr", { hasText: "Nouveau numéro" }).getByRole("button", { name: "Rattacher…" }).click();
+await page.getByLabel("Organisation d'origine de l'artisan").selectOption({ label: "Froid Services Komla" });
+await page.getByRole("button", { name: "Continuer" }).first().click();
+await page.getByLabel("Motif").fill("Même artisan, vérifié par l'ancien numéro");
+await page.getByRole("dialog").getByRole("button", { name: "Continuer" }).click();
+await page.getByRole("dialog").getByRole("button", { name: "Rattacher le numéro" }).click();
+await page.waitForTimeout(1500);
+check(db(`select org_id from public.channel_identities where id = '${newIdentity}'`) === org, "le nouveau numéro rejoint l'organisation d'origine");
+check(db(`select count(*) from public.organizations where id = '${newOrg}'`) === "0", "l'organisation vide disparaît");
+check(await page.getByText(/Numéro rattaché/).isVisible(), "confirmation affichée");
+await shot(page, "adm-move-identity");
+
 // ---------------------------------------------------------------- ADMIN depuis le chat
 console.log("\nAccès « ADMIN » depuis le chat (P-76)");
 const before = await c.send("ADMIN");

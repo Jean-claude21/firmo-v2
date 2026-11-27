@@ -43,6 +43,8 @@ const schema = z.object({
   WHATSAPP_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
   // Identifiant du Flow « profil » publié chez Meta (compte vérifié) ; vide : lien web.
   WHATSAPP_FLOW_PROFILE_ID: z.string().default(""),
+  /** Modèle Meta approuvé pour les avis hors fenêtre de 24 h (docs/OPERATIONS.md). */
+  WHATSAPP_NOTICE_TEMPLATE: z.string().default("firmo_avis"),
 
   // Paiement de l'abonnement.
   PAYMENTS_SIMULATOR_SECRET: z.string().default(""),
@@ -54,8 +56,9 @@ const schema = z.object({
 
   // Observabilité.
   ERROR_REPORTING_DSN: z.string().default(""),
-  POSTHOG_HOST: z.string().default(""),
-  POSTHOG_PROJECT_KEY: z.string().default(""),
+  // Mesure (Umami de Kete) : relais des événements du serveur, sans donnée personnelle.
+  UMAMI_URL: z.string().default(""),
+  UMAMI_WEBSITE_ID: z.string().default(""),
 });
 
 export type Config = z.infer<typeof schema>;

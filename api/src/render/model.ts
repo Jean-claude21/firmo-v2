@@ -125,7 +125,11 @@ export function renderModel(doc: DocumentView, options: RenderOptions) {
       accent: readableOnWhite(color),
       accent_ink: "#FFFFFF",
       logo: options.hasLogo,
-      legal: ((issuer.legal_ids as Array<{ label: string; value: string }> | undefined) ?? []).map((l) => ({ label: l.label, value: l.value })),
+      legal: [
+        ...((issuer.legal_ids as Array<{ label: string; value: string }> | undefined) ?? []).map((l) => ({ label: l.label, value: l.value })),
+        // « Non assujetti à la TVA » (formule du pays) quand le document ne porte aucune taxe.
+        ...(issuer.tax_mention && !(doc.applyTax && doc.taxRateBp > 0) ? [{ label: String(issuer.tax_mention), value: "" }] : []),
+      ],
       footer_note: issuer.footer_note ? String(issuer.footer_note) : null,
     },
     type: doc.typeLabel,

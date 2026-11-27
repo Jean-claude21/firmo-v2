@@ -17,7 +17,7 @@ import { registerBillingRoutes } from "./routes/billing.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerAdminV1Routes } from "./routes/admin-v1.js";
 import { newToken } from "./lib/session.js";
-import { posthogSink, startMaintenance } from "./ops/maintenance.js";
+import { startMaintenance, umamiSink } from "./ops/maintenance.js";
 import { chariowProvider, monerooProvider, type PaymentProvider, simulatorProvider } from "./billing/providers.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
@@ -99,6 +99,7 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
       phoneNumberId: config.WHATSAPP_PHONE_NUMBER_ID,
       apiVersion: config.WHATSAPP_API_VERSION,
       flows: config.WHATSAPP_FLOW_PROFILE_ID ? { profile: config.WHATSAPP_FLOW_PROFILE_ID } : {},
+      noticeTemplate: config.WHATSAPP_NOTICE_TEMPLATE,
     }));
   }
   const engine = new ConversationEngine({
@@ -143,7 +144,7 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
   if (config.WORKER_ENABLED !== "false") {
     startMaintenance({
       pool, files,
-      sink: config.POSTHOG_PROJECT_KEY ? posthogSink({ host: config.POSTHOG_HOST, projectKey: config.POSTHOG_PROJECT_KEY }) : null,
+      sink: config.UMAMI_URL && config.UMAMI_WEBSITE_ID ? umamiSink({ url: config.UMAMI_URL, websiteId: config.UMAMI_WEBSITE_ID }) : null,
       log: (m, e) => console.error(m, e ?? ""),
     });
   }

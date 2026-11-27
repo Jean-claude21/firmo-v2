@@ -209,10 +209,13 @@ export function chariowProvider(config: { apiKey: string; webhookSecret: string;
       return { providerReference: d.purchase.id, checkoutUrl: d.payment.checkout_url };
     },
     verifyWebhook(rawBody, hdrs) {
-      if (!config.webhookSecret) return false;
-      const given = hdrs[CHARIOW_SIGNATURE_HEADER] ?? "";
-      const expected = `sha256=${createHmac("sha256", config.webhookSecret).update(rawBody).digest("hex")}`;
-      if (given.length !== expected.length || !timingSafeEqual(Buffer.from(given), Buffer.from(expected))) return false;
+      // Un Pulse peut couvrir toute la boutique (plusieurs produits Kete) : plusieurs secrets acceptés.
+      const secrets = config.webhookSecret.split(",").map((s) => s.trim()).filter(Boolean);
+      if (!secrets.length) return false;
+      const given = (hdrs[CHARIOW_SIGNATURE_HEADER] ?? "").trim().toLowerCase();
+      if (!/^sha256=[0-9a-f]{64}$/.test(given)) return false;
+      const ok = secrets.some((secret) => timingSafeEqual(Buffer.from(given), Buffer.from(`sha256=${createHmac("sha256", secret).update(rawBody).digest("hex")}`)));
+      if (!ok) return false;
       // L'événement annoncé en en-tête doit être celui du corps.
       try {
         return (JSON.parse(rawBody) as { event?: string }).event === hdrs[CHARIOW_EVENT_HEADER];

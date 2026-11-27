@@ -32,6 +32,13 @@ export interface Channel {
   sendDocument(to: string, file: Buffer, filename: string, caption?: string): Promise<OutboundResult>;
   /** Télécharge un média entrant (ref fournie par le webhook). */
   downloadMedia(ref: string): Promise<{ bytes: Buffer; mediaType: string }>;
+  /**
+   * Fenêtre (en heures) après le dernier message de l'artisan pendant laquelle un texte libre passe.
+   * WhatsApp : 24 h ; au-delà, seul un modèle approuvé par Meta est accepté. Absent : pas de limite.
+   */
+  readonly replyWindowHours?: number;
+  /** Avis hors fenêtre (WhatsApp : modèle approuvé, le texte en paramètre) ; absent : texte libre. */
+  sendNotice?(to: string, text: string, locale: string): Promise<OutboundResult>;
   /** Formulaire natif (WhatsApp Flows) ; absent : lien vers le formulaire web. */
   sendForm?(to: string, form: string, cta: string, body: string): Promise<OutboundResult | null>;
 }
