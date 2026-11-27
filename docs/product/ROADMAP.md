@@ -20,7 +20,7 @@
 | 012-web-v1 | Système de design v1, accueil, éditeur complet, présentation avec aperçu en direct, abonnement, pages légales, Formats, liens réutilisables, landing | PARITE_V1 P-60 à P-69 | ✅ 2026-11-26 |
 | 013-admin-v1 | Centre de commande, incidents, organisation et support, listes, actions sensibles sur motif, montants sur motif, accès « ADMIN » par le chat, recherche, pilotage | PARITE_V1 P-70 à P-78 | ✅ 2026-11-26 |
 | 014-mesure-v1 | Relais des événements sans donnée personnelle, rétention des médias, export, suppression sur demande | PARITE_V1 P-80 à P-83 | ✅ 2026-11-26 |
-| 015-lancement | Lancement en Afrique : pays européens retirés, mention « non assujetti à la TVA », aucun suivi des paiements clients (décision 0008), Chariow dans la console, avis WhatsApp hors fenêtre, changement de numéro, Umami, Sentry, pages légales Kete | DOC-3, DOC-6, OFF-3, ADM-2, IX | ✅ 2026-11-27 · modèle Meta et clés Chariow à poser |
+| 015-lancement | Lancement en Afrique : pays européens retirés, mention « non assujetti à la TVA », aucun suivi des paiements clients (décision 0008), Chariow dans la console, avis WhatsApp hors fenêtre, changement de numéro, Umami, Sentry, pages légales Kete | DOC-3, DOC-6, OFF-3, ADM-2, IX | ✅ 2026-11-27 · staging déployé ; produit Chariow et modèle Meta à poser |
 
 ## Ce que le porteur doit fournir (hors code)
 

@@ -17,8 +17,19 @@
 | L-08 | Pages légales de Kete : mentions légales, cookies, traitement des données (sous-traitants nommés), éditeur et contact par défaut | `ui-public.mjs` |
 | L-09 | Landing : « Toucher à l'argent de tes clients » dans ce que Firmo ne fera jamais | `ui-landing.mjs` |
 
+## Vérifié le 2026-11-27
+
+- pgTAP 298/298 sur une branche Neon jetable issue de `staging` (supprimée ensuite) ; CI verte sur
+  #13, #14 et #15, fusionnées dans `dev`.
+- Staging migré (0015 → 0020) et déployé : `/health` sain ; Pulse signé avec chacun des deux secrets
+  accepté (200), signature invalide refusée (401) ; mesure Umami présente dans le site construit
+  (variables passées au build du `Dockerfile`) ; pages légales servies.
+
 ## Non vérifié
 
-- Pulse Chariow réel : clé d'API et secret à poser sur Coolify (adresse et étapes dans `docs/OPERATIONS.md`).
+- Vente Chariow réelle : le produit de l'abonnement n'existe pas encore dans la boutique de la clé
+  posée ; à créer, puis à coller dans Console › Configuration › Offres (champ « Produit Chariow »),
+  et Chariow à activer dans Console › Paiements.
 - Modèle `firmo_avis` : à faire approuver chez Meta ; tant qu'il ne l'est pas, un avis hors fenêtre échoue chez WhatsApp et la tâche est journalisée.
-- pgTAP sur une branche Neon jetable et CI GitHub (facturation GitHub bloquée).
+- Canaux WhatsApp et Telegram : aucune variable `WHATSAPP_*` ni `TELEGRAM_*` sur l'application de staging.
+- Production : aucune application Firmo de production sur Coolify (`firmo.kete.digital` ne répond pas).
