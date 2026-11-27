@@ -61,7 +61,8 @@
     grid(
       columns: (1fr, auto),
       align: (left, right),
-      [#data.issuer.name#for l in data.issuer.legal [ · #l.label #l.value]],
+      // Nom puis mentions légales, séparés par « · » ; jamais de séparateur en tête quand le nom manque.
+      [#((data.issuer.name,) + data.issuer.legal.map(l => (l.label + " " + l.value).trim())).filter(present).join(" · ")],
       [#data.number · #counter(page).display("1 / 1", both: true)],
     )
   },
