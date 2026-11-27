@@ -53,7 +53,11 @@ describe.skipIf(!hasDatabase)("abonnement", () => {
     portalSessions: pgPortalSessionStore(pool),
     modules: [(a) => registerBillingRoutes(a, { pool, signer, providers: [moneroo, chariow, simulatorProvider()], apiUrl: "https://api.test", webUrl: "https://firmo.test", conversations: pgConversationStore(pool) })],
   });
-  afterAll(() => pool.end());
+  // Les fournisseurs activés par ces tests sont remis comme ils étaient (la base locale est partagée).
+  afterAll(async () => {
+    await pool.query("update public.payment_providers set enabled = false where code in ('moneroo', 'chariow')");
+    await pool.end();
+  });
 
   async function orgToken() {
     const r = await pool.query<{ org_id: string }>("select org_id from app.ensure_identity('simulator', $1, null, '+22890000000', null)", [uid("bill")]);

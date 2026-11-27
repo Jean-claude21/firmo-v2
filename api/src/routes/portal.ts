@@ -4,13 +4,17 @@ import { z } from "zod";
 import { amountFromUser } from "../ai/guard.js";
 import { parsePercentBp, parseQuantity } from "../documents/money.js";
 import type { AdjustmentInput, DocumentStore, DocumentView, DraftContent, LineInput } from "../documents/store.js";
-import { sql, sqlOne } from "../lib/db.js";
+import { fromPgError, sql, sqlOne } from "../lib/db.js";
 import { httpErrors } from "../lib/errors.js";
 import { orgIdOf, requireOrg, type SessionSigner, type SessionVariables } from "../lib/session.js";
 import type { ObjectStore } from "../lib/storage.js";
 import { parseJson, parseQuery, parseWith } from "../lib/validate.js";
 import { decodeImage, detectImageType, dominantColor, toPng } from "../portal/logo.js";
 import type { RenderService } from "../render/service.js";
+import { pgDocumentStore } from "../documents/store.js";
+import { presentationSample } from "../voix/document.js";
+import { buildFormatDocument, FORMAT_OPTIONS, type FormatOption } from "../portal/formats.js";
+import { zip } from "../lib/zip.js";
 
 // Espace artisan (ART-1 à ART-5) et page publique du document (ART-7). Le web envoie ce que
 // l'artisan tape ; montants et transitions sont décidés en SQL.
@@ -208,8 +212,8 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
     });
   });
 
-  app.patch("/v1/portal/profile", auth, async (c) => {
-    const body = await parseJson(c, z.record(z.string(), z.unknown()));
+  /** Champs de la présentation (noms du web) → colonnes de l'organisation (règles en SQL). */
+  function profilePatch(body: Record<string, unknown>): Record<string, unknown> {
     const map: Record<string, string> = {
       name: "name", tradeCode: "trade_code", countryCode: "country_code", locale: "locale", phone: "phone", email: "email",
       address: "address", legalIds: "legal_ids", taxRegistered: "tax_registered", taxCode: "tax_code", brandColor: "brand_color",
@@ -230,8 +234,47 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
       if (!key) throw httpErrors.validation({ [k]: "champ inconnu" });
       patch[key] = v;
     }
-    await sql(d.pool, "select app.update_profile($1, $2::jsonb)", [org(c), JSON.stringify(patch)]);
+    return patch;
+  }
+
+  app.patch("/v1/portal/profile", auth, async (c) => {
+    const body = await parseJson(c, z.record(z.string(), z.unknown()));
+    await sql(d.pool, "select app.update_profile($1, $2::jsonb)", [org(c), JSON.stringify(profilePatch(body))]);
     return c.json({ ok: true });
+  });
+
+  // P-64 : aperçu en direct de la présentation, avec les valeurs tapées mais pas encore enregistrées.
+  // Tout se passe dans une transaction annulée : la présentation est appliquée par la même règle SQL
+  // que l'enregistrement (refus compris), le document est rendu par le vrai gabarit, rien ne reste.
+  app.post("/v1/portal/presentation/preview", auth, async (c) => {
+    const body = await parseJson(c, z.record(z.string(), z.unknown()));
+    const id = org(c);
+    const patch = profilePatch(body);
+    const client = await d.pool.connect();
+    let view: DocumentView;
+    try {
+      await client.query("begin");
+      await client.query("select app.update_profile($1, $2::jsonb)", [id, JSON.stringify(patch)]);
+      const store = pgDocumentStore(client as unknown as pg.Pool, { shareSecret: "aperçu" });
+      const latest = await client.query<{ id: string }>(
+        "select id from public.documents where org_id = $1 and status <> 'cancelled' order by (status <> 'draft') desc, updated_at desc limit 1", [id]);
+      // Pas encore de document : un exemple sans prix (aucun montant inventé, la ligne reste « à compléter »).
+      const locale = (await client.query<{ locale: string }>("select locale from public.organizations where id = $1", [id])).rows[0]!.locale;
+      const sample = presentationSample(locale);
+      const docId = latest.rows[0]?.id ?? (await store.createDraftContent(id, "quote", {
+        title: sample.title,
+        sections: [{ title: null, lines: [{ label: sample.line, description: null, kind: "priced", quantity: "1", unit: null, unitPriceMinor: null, flatAmountMinor: null, source: "typed" }] }],
+      }, "web"));
+      const issuer = (await client.query<{ issuer: Record<string, unknown> }>("select app.issuer_snapshot($1) as issuer", [id])).rows[0]!.issuer;
+      view = { ...(await store.get(id, docId)), issuer, ...(typeof body.templateCode === "string" ? { template: body.templateCode } : {}) };
+    } catch (error) {
+      throw fromPgError(error);
+    } finally {
+      await client.query("rollback").catch(() => undefined);
+      client.release();
+    }
+    const out = await d.render.preview(view);
+    return c.body(new Uint8Array(out.png), 200, { "Content-Type": "image/png", "Cache-Control": "no-store" });
   });
 
   // ------------------------------------------------------------- clauses (P-07)
@@ -299,7 +342,7 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
   app.get("/v1/portal/dashboard", auth, async (c) => {
     const id = org(c);
     const r = await sqlOne<{ v: Record<string, unknown> }>(d.pool, "select app.org_dashboard($1) as v", [id]);
-    const recent = await d.documents.list(id, { limit: 5 });
+    const recent = await d.documents.list(id, { limit: 10 });
     return c.json({ stats: r.v, recent: recent.items, entitlement: await d.documents.entitlement(id) });
   });
 
@@ -350,8 +393,8 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
 
   const TYPES = { pdf: "application/pdf", svg: "image/svg+xml", png: "image/png" } as const;
 
-  app.get("/v1/portal/documents/:id/file.:kind", auth, async (c) => {
-    const kind = c.req.param("kind") as keyof typeof TYPES;
+  app.get("/v1/portal/documents/:id/:file{file\.(?:pdf|png|svg)}", auth, async (c) => {
+    const kind = c.req.param("file").slice(5) as keyof typeof TYPES;
     if (!(kind in TYPES)) throw httpErrors.notFound();
     const { doc, bytes } = await fileFor(org(c), c.req.param("id"), kind);
     const name = `${doc.number ?? "brouillon"}.${kind}`;
@@ -458,6 +501,7 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
       sql<Row>(
         d.pool,
         `select p.code, app.label(p.labels, $1) as label, p.price_minor::text as price_minor, p.quota, p.period_days,
+                p.grace_days, p.top_up_documents, p.top_up_price_minor::text as top_up_price_minor,
                 cu.code as currency, cu.minor_units, cu.symbol, cu.symbol_before, cu.thousands_separator, cu.decimal_separator
          from public.plans p join public.currencies cu on cu.code = p.currency_code
          where p.active and p.currency_code = (
@@ -467,13 +511,94 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
         [locale, country],
       ),
     ]);
+    const warn = await sqlOne<{ n: number }>(d.pool, "select coalesce((app.setting('subscription_warn_days') #>> '{}')::int, 3) as n");
     return c.json({
       trialDocuments: trial.n,
+      warnDays: warn.n,
       plans: plans.map((p) => ({
         code: p.code, label: p.label, priceMinor: p.price_minor, quota: p.quota, periodDays: p.period_days,
+        graceDays: p.grace_days, topUp: p.top_up_price_minor && p.top_up_documents ? { documents: p.top_up_documents, priceMinor: p.top_up_price_minor } : null,
         currency: { code: p.currency, minorUnits: p.minor_units, symbol: p.symbol, symbolBefore: p.symbol_before, thousandsSeparator: p.thousands_separator, decimalSeparator: p.decimal_separator },
       })),
     }, 200, { "Cache-Control": "public, max-age=300" });
+  });
+
+  // ------------------------------------------------------------- export des données (P-82)
+  // Tout ce que l'artisan a mis dans Firmo, téléchargé d'un coup : données (JSON), liste des
+  // documents (CSV) et PDF des documents émis. La demande est journalisée.
+  app.get("/v1/portal/export", auth, async (c) => {
+    const id = org(c);
+    const o = await sqlOne<Row>(d.pool, `select name, trade_label, country_code, currency_code, locale, phone, email, address, legal_ids,
+        tax_registered, brand_color, template_code, payment_methods, footer_note, created_at from public.organizations where id = $1`, [id]);
+    const [clients, clauses, ids] = await Promise.all([
+      sql<Row>(d.pool, "select name, phone, email, address, legal_id, created_at from public.clients where org_id = $1 order by name", [id]),
+      sql<Row>(d.pool, "select title, body, is_default, active from public.clauses where org_id = $1 order by position", [id]),
+      sql<{ id: string }>(d.pool, "select id from public.documents where org_id = $1 order by created_at", [id]),
+    ]);
+    const docs = [];
+    for (const r of ids) docs.push(await d.documents.get(id, r.id));
+    const files: Array<{ name: string; data: Buffer }> = [];
+    const strip = (doc: DocumentView) => {
+      const { orgId: _o, renderVersion: _r, blockers: _b, ...rest } = doc;
+      return rest;
+    };
+    files.push({ name: "firmo/donnees.json", data: Buffer.from(JSON.stringify({ exportedAt: new Date().toISOString(), organization: o, clients, clauses, documents: docs.map(strip) }, null, 2)) });
+    const csvCell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [["numero", "type", "statut", "client", "objet", "total_minor", "paye_minor", "devise", "emis_le"].join(";"),
+      ...docs.map((x) => [x.number, x.type, x.status, x.client.name, x.title, x.totalMinor, x.paidMinor, x.currency.code, x.issueDate].map(csvCell).join(";"))].join("\r\n");
+    files.push({ name: "firmo/documents.csv", data: Buffer.from(`\uFEFF${csv}`, "utf8") });
+    for (const x of docs) {
+      if (x.status === "draft") continue;
+      const rendered = await d.render.current(x.id);
+      if (!rendered) continue;
+      const pdf = await d.render.file(rendered.pdfKey).catch(() => null);
+      if (pdf) files.push({ name: `firmo/pdf/${(x.number ?? x.id).replace(/[^A-Za-z0-9._-]+/g, "-")}.pdf`, data: pdf });
+    }
+    // Deux requêtes : la demande créée par la fonction n'est visible qu'après elle.
+    const request = await sqlOne<{ id: string }>(d.pool, "select app.request_data($1, null, 'export', 'web') as id", [id]);
+    await sql(d.pool, "update public.data_requests set status = 'done', handled_at = now(), handled_by = 'self' where id = $1", [request.id]);
+    const day = new Date().toISOString().slice(0, 10);
+    return c.body(new Uint8Array(zip(files)), 200, { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="firmo-export-${day}.zip"`, "Cache-Control": "no-store" });
+  });
+
+  // P-83 : demande de suppression depuis l'espace (même traitement que depuis le chat).
+  app.get("/v1/portal/data-requests", auth, async (c) => {
+    const rows = await sql<Row>(d.pool, "select kind, status, origin, created_at, handled_at from public.data_requests where org_id = $1 order by created_at desc limit 20", [org(c)]);
+    return c.json({ items: rows.map((r) => ({ kind: r.kind, status: r.status, origin: r.origin, createdAt: r.created_at.toISOString(), handledAt: r.handled_at?.toISOString?.() ?? null })) });
+  });
+  app.post("/v1/portal/data-requests", auth, async (c) => {
+    await parseJson(c, z.object({ kind: z.literal("deletion") }));
+    const r = await sqlOne<{ id: string }>(d.pool, "select app.request_data($1, null, 'deletion', 'web') as id", [org(c)]);
+    return c.json({ id: r.id }, 201);
+  });
+
+  // ------------------------------------------------------------- formats (P-67)
+  // Aperçus publics réels : même moteur que les documents, contenu d'exemple, rien de stocké.
+  const formatCache = new Map<string, { pdf: Buffer; png: Buffer }>();
+  app.get("/v1/public/formats/:file", async (c) => {
+    const kind = c.req.param("file") === "preview.pdf" ? "pdf" : c.req.param("file") === "preview.png" ? "png" : null;
+    if (!kind) throw httpErrors.notFound();
+    const q = parseQuery(c, z.object({
+      scenario: z.enum(["express", "detaille", "professionnel", "facture"]).default("professionnel"),
+      options: z.string().max(300).default(FORMAT_OPTIONS.join(",")),
+      locale: z.enum(["fr", "en"]).default("fr"),
+    }));
+    const chosen = new Set(q.options.split(",").filter((o): o is FormatOption => (FORMAT_OPTIONS as readonly string[]).includes(o)));
+    const options = Object.fromEntries(FORMAT_OPTIONS.map((o) => [o, chosen.has(o)])) as Record<FormatOption, boolean>;
+    const key = `${q.locale}:${q.scenario}:${FORMAT_OPTIONS.filter((o) => options[o]).join(",")}`;
+    let out = formatCache.get(key);
+    if (!out) {
+      const view = await buildFormatDocument(d.pool, q.scenario, options, q.locale);
+      const r = await d.render.preview(view);
+      out = { pdf: r.pdf, png: r.png };
+      if (formatCache.size >= 300) formatCache.delete(formatCache.keys().next().value!);
+      formatCache.set(key, out);
+    }
+    return c.body(new Uint8Array(kind === "pdf" ? out.pdf : out.png), 200, {
+      "Content-Type": kind === "pdf" ? "application/pdf" : "image/png",
+      "Cache-Control": "public, max-age=3600",
+      ...(kind === "pdf" ? { "Content-Disposition": `inline; filename="firmo-${q.scenario}.pdf"` } : {}),
+    });
   });
 
   // ------------------------------------------------------------- page publique (ART-7)
@@ -482,8 +607,8 @@ export function registerPortalRoutes(app: Hono<{ Variables: SessionVariables }>,
     return c.json(publicView(doc));
   });
 
-  app.get("/v1/public/documents/:token/file.:kind", async (c) => {
-    const kind = c.req.param("kind") as keyof typeof TYPES;
+  app.get("/v1/public/documents/:token/:file{file\.(?:pdf|png|svg)}", async (c) => {
+    const kind = c.req.param("file").slice(5) as keyof typeof TYPES;
     if (!(kind in TYPES)) throw httpErrors.notFound();
     const doc = await d.documents.publicDocument(c.req.param("token"));
     const { bytes } = await fileFor(null, doc.id, kind);

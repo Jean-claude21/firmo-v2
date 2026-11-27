@@ -1,0 +1,19 @@
+[
+  {
+    "from": "me",
+    "text": "Devis pour la mairie : 45 barres tube 80x40 à 17000, 8 cornières 50x5 à 14000, 2 boîtes peinture alu à 12000, 10 litres diluant à 1200, 60 chevilles à 500"
+  },
+  {
+    "from": "firmo",
+    "text": "J'ai lu :\nPrestations :\n• 45 barres Tube 80x40 à 17 000 F CFA\n• 8 Cornières 50x5 à 14 000 F CFA\n• 2 boîtes Peinture alu à 12 000 F CFA\n• 10 litres Diluant à 1 200 F CFA\n• 60 Chevilles à 500 F CFA\nTotal provisoire : 943 000 F CFA\nValidité : 30 jours\n\nPour qui est ce devis ?"
+  },
+  {
+    "from": "me",
+    "text": "Services techniques de la mairie"
+  },
+  {
+    "from": "firmo",
+    "text": "Je prépare le PDF final du devis.",
+    "file": "DEV-2026-001.pdf"
+  }
+]

@@ -43,3 +43,20 @@ export function date(iso: string | null, locale: string): string {
   const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
   return d.toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
+
+/** Montant sans symbole, pour les colonnes en chasse fixe (le symbole est posé à côté, plus petit). */
+export function figure(minor: string | number | bigint, c: Currency): string {
+  const full = money(minor, c);
+  return full.replace(c.symbol, "").trim();
+}
+
+/** « il y a 8 min », « hier », sinon la date : pour « modifié … » (v1). */
+export function ago(iso: string, locale: string): string {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  const fr = locale !== "en";
+  if (s < 60) return fr ? "à l'instant" : "just now";
+  if (s < 3600) return fr ? `il y a ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return fr ? `il y a ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)} h ago`;
+  if (s < 172800) return fr ? "hier" : "yesterday";
+  return date(iso, locale);
+}

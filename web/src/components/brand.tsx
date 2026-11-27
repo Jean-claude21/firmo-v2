@@ -1,22 +1,18 @@
 import { Link } from "@tanstack/react-router";
 
-/** Logo Firmo : document plié, coche ambre. */
-export function Mark({ className = "size-8" }: { className?: string }) {
+/** Marque Firmo (v1) : un « F » dans un carré à filet, achromatique. */
+export function Mark({ className = "size-7", inverse = false }: { className?: string; inverse?: boolean }) {
+  const colors = inverse ? "border-white bg-transparent text-white" : "border-ink bg-surface text-ink";
   return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <rect width="64" height="64" rx="14" fill="#14213D" />
-      <path d="M20 14h17l9 9v27a3 3 0 0 1-3 3H20a3 3 0 0 1-3-3V17a3 3 0 0 1 3-3z" fill="#FAF8F4" />
-      <path d="M37 14v9h9" fill="#E7E3DB" />
-      <path d="M24 31h16M24 37h10" stroke="#14213D" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="42" cy="44" r="8" fill="#E9A23B" />
-      <path d="M38.5 44l2.5 2.5 4.5-5" stroke="#14213D" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <span className={`inline-flex shrink-0 items-center justify-center border-[1.5px] font-mono text-[13px] font-bold ${colors} ${className}`} aria-hidden>
+      F
+    </span>
   );
 }
 
 export function Logo({ to = "/" }: { to?: string }) {
   return (
-    <Link to={to} className="inline-flex min-h-11 items-center gap-2.5 font-serif text-[22px] font-bold tracking-tight text-ink">
+    <Link to={to} className="inline-flex min-h-11 items-center gap-2.5 text-[21px] font-bold tracking-[-0.01em] text-ink">
       <Mark />
       Firmo
     </Link>

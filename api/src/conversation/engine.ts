@@ -1,5 +1,5 @@
 import { type Checker, capitalizeInitial, checker, guardAdjustment, guardLine, guardReading, heard } from "../ai/guard.js";
-import { decideSimple } from "../ai/rules.js";
+import { decideSimple, rulesReader } from "../ai/rules.js";
 import type { AiCall, AiReader, Correction, DocumentType, Intent, ReadContext, ReadLine, SaleReading, TurnDecision } from "../ai/types.js";
 import { ChannelError, type Button, type Channel } from "../channels/types.js";
 import { formatMoney, formatQuantity } from "../documents/money.js";
@@ -43,6 +43,8 @@ interface Turn {
   /** Texte du message (ou transcription du vocal) : seule preuve des nombres. */
   text: string;
   attempts: number;
+  /** L'IA a échoué pendant ce tour : la suite passe en lecture simplifiée (mode dégradé, P-39). */
+  degraded: boolean;
 }
 
 type Awaiting = "pdf_offer" | "issue_confirm" | "missing" | "business_name" | null;
@@ -65,7 +67,7 @@ export class ConversationEngine {
     const ctx = await this.d.store.context(msg.orgId);
     const turn: Turn = {
       msg, ctx, w: chatWords(ctx.locale), channel, state: await this.d.store.state(msg.identityId),
-      documentId: null, text: msg.text?.trim() ?? "", attempts: job.attempts,
+      documentId: null, text: msg.text?.trim() ?? "", attempts: job.attempts, degraded: false,
     };
     try {
       await this.process(turn);
@@ -86,7 +88,8 @@ export class ConversationEngine {
 
   private async process(t: Turn): Promise<void> {
     const { msg, w } = t;
-    if (msg.firstMessage) {
+    // Premier contact dit une seule fois, même si la tâche est reprise après une panne.
+    if (msg.firstMessage && !(await this.d.store.hasOutbound(msg.identityId))) {
       // Premier contact (voix #1) et ce qu'un lien expose, dit tout de suite (décisions v1).
       await this.say(t, w.welcome);
       await this.say(t, w.privacy(`${this.web()}/confidentialite`));
@@ -99,16 +102,16 @@ export class ConversationEngine {
     }
     if (msg.kind === "image") {
       await this.say(t, w.ackPhoto);
-      if (this.d.reader.simulated) return void (await this.say(t, w.outagePhoto));
+      if (this.offline(t)) return void (await this.say(t, w.outagePhoto));
       await this.readSource(t, { image: await this.download(t) }, false);
       return;
     }
     if (msg.kind === "audio") {
       await this.say(t, w.ackVoice);
-      if (this.d.reader.simulated) return void (await this.say(t, w.outageVoice));
+      if (this.offline(t)) return void (await this.say(t, w.outageVoice));
       const audio = await this.download(t);
-      const heard = await this.ai(t, "transcribe", () => this.d.reader.transcribe(audio.bytes, audio.mediaType, t.ctx.locale));
-      if (!heard) return void (await this.say(t, w.transcribeFailed));
+      const heard = await this.ai(t, "transcribe", (r) => r.transcribe(audio.bytes, audio.mediaType, t.ctx.locale));
+      if (!heard) return void (await this.say(t, t.degraded ? w.outageVoice : w.transcribeFailed));
       t.text = heard;
       await this.d.store.setStatus(msg.id, "processing", { transcript: heard });
     }
@@ -130,7 +133,7 @@ export class ConversationEngine {
     }
     // « Ajoute … » : avec l'IA, la phrase entière est comprise (section visée, condition, poste) ;
     // la commande figée ne sert qu'en mode dégradé.
-    if (command && !(command.type === "add" && !this.d.reader.simulated)) {
+    if (command && !(command.type === "add" && !this.offline(t))) {
       await this.command(t, command);
       return;
     }
@@ -150,9 +153,9 @@ export class ConversationEngine {
       history: await this.d.store.history(t.msg.identityId, t.msg.id),
       awaiting: t.state.awaiting === "missing" && draft ? this.missingText(t, draft) : t.state.awaiting,
     };
-    if (this.d.reader.simulated) return decideSimple(t.text, ctx);
+    if (this.offline(t)) return decideSimple(t.text, ctx);
     try {
-      return await this.ai(t, "intent", () => this.d.reader.decide(t.text, ctx));
+      return await this.ai(t, "intent", (r) => r.decide(t.text, ctx));
     } catch (error) {
       // Dernière tentative : on ne laisse pas l'artisan sans réponse (mode dégradé de la v1).
       if (t.attempts >= 3) return { ...decideSimple(t.text, ctx), reply: null };
@@ -173,7 +176,7 @@ export class ConversationEngine {
       case "other":
         if (d.corrections.length) return this.applyCorrections(t, d.corrections);
         if (d.reply) return this.say(t, d.reply);
-        if (this.d.reader.simulated) return this.say(t, w.outage);
+        if (this.offline(t)) return this.say(t, w.outage);
         return this.say(t, w.notUnderstood);
       default:
         return this.intent(t, d.intent, d);
@@ -254,9 +257,13 @@ export class ConversationEngine {
     const { w, ctx } = t;
     const started = Date.now();
     let cost: number | null = null;
-    const reading = await this.ai<SaleReading>(t, "read", () => (source.image
-      ? this.d.reader.readImage(source.image.bytes, source.image.mediaType, this.readContext(ctx))
-      : this.d.reader.readText(source.text ?? "", this.readContext(ctx))), (c) => (cost = c));
+    const reading = await this.ai<SaleReading>(t, "read", (r) => (source.image
+      ? r.readImage(source.image.bytes, source.image.mediaType, this.readContext(ctx))
+      : r.readText(source.text ?? "", this.readContext(ctx))), (c) => (cost = c));
+    // L'IA vient de tomber sur une photo : rien n'est lu, l'artisan reçoit le format de secours.
+    if (source.image && t.degraded) return this.say(t, w.outagePhoto);
+    // Sur un texte : la lecture simplifiée continue, et l'artisan le sait.
+    if (t.degraded && !this.d.reader.simulated) await this.say(t, w.degradedNote);
     if (reading.sourceText) await this.d.store.setStatus(t.msg.id, "processing", { transcript: reading.sourceText });
     const guarded = guardReading(reading, reading.sourceText ?? source.text ?? null, ctx.currency.minorUnits);
     await this.d.store.recordReading(ctx.orgId, source.image ? "image" : t.msg.kind === "audio" ? "audio" : "text",
@@ -314,21 +321,33 @@ export class ConversationEngine {
   }
 
   /** Appel IA mesuré (coût, durée). Une panne passagère est relancée par la file. */
-  private async ai<T>(t: Turn, task: string, call: () => Promise<AiCall<T>>, onCost?: (cost: number | null) => void): Promise<T> {
+  /**
+   * Appel à l'IA mesuré (coût, durée). Si l'IA échoue (panne, quota, réseau) après ses propres
+   * tentatives, le tour passe en mode dégradé : la lecture simplifiée répond, l'artisan n'attend pas
+   * et ne reçoit pas deux fois les mêmes messages (P-39).
+   */
+  private async ai<T>(t: Turn, task: string, call: (reader: AiReader) => Promise<AiCall<T>>, onCost?: (cost: number | null) => void): Promise<T> {
+    if (this.offline(t)) return (await call(this.rules)).value;
     const started = Date.now();
     try {
-      const result = await call();
-      if (!this.d.reader.simulated) {
-        const cost = await this.d.store.recordAi(t.ctx.orgId, task, true, result.usage);
-        onCost?.(cost);
-      }
+      const result = await call(this.d.reader);
+      const cost = await this.d.store.recordAi(t.ctx.orgId, task, true, result.usage);
+      onCost?.(cost);
       return result.value;
     } catch (error) {
-      if (!this.d.reader.simulated) {
-        await this.d.store.recordAi(t.ctx.orgId, task, false, { model: "?", durationMs: Date.now() - started }).catch(() => undefined);
-      }
-      throw error;
+      if (error instanceof PermanentJobError) throw error;
+      await this.d.store.recordAi(t.ctx.orgId, task, false, { model: "?", durationMs: Date.now() - started }).catch(() => undefined);
+      console.error(`IA indisponible (${task}) : mode dégradé`, (error as Error).message?.slice(0, 200));
+      t.degraded = true;
+      return (await call(this.rules)).value;
     }
+  }
+
+  private readonly rules = rulesReader();
+
+  /** Sans IA configurée, ou IA tombée pendant ce tour. */
+  private offline(t: Turn): boolean {
+    return this.d.reader.simulated || t.degraded;
   }
 
   private async download(t: Turn): Promise<{ bytes: Buffer; mediaType: string }> {
@@ -482,7 +501,7 @@ export class ConversationEngine {
     }
     if (!edits.length) {
       // Rien de compris à appliquer : on le dit, on ne laisse jamais un message sans réponse.
-      if (!payments.length) await this.say(t, this.d.reader.simulated ? w.outage : w.notUnderstood);
+      if (!payments.length) await this.say(t, this.offline(t) ? w.outage : w.notUnderstood);
       return;
     }
     let draft = await this.editable(t);
@@ -944,7 +963,7 @@ export class ConversationEngine {
         return this.showReading(t, revision);
       }
       case "add": {
-        const reading = await this.ai(t, "read", () => this.d.reader.readText(c.text, this.readContext(ctx)));
+        const reading = await this.ai(t, "read", (r) => r.readText(c.text, this.readContext(ctx)));
         const lines: ReadLine[] = reading.sections.flatMap((s) => s.lines);
         return this.applyCorrections(t, lines.map((line) => ({ target: "line", op: "add", section: null, line })));
       }
@@ -1020,6 +1039,15 @@ export class ConversationEngine {
         ? w.topUpAdded(Number(job.payload.units ?? 0), Math.max(0, quota - (sub?.used ?? ent?.used ?? 0)))
         : w.subscriptionActive(quota, until);
     await this.tellOrg(orgId, text);
+  }
+
+  /** Tâche `staff_message` (P-71, P-72) : un message de l'équipe, ou une demande de renvoi d'un média. */
+  async staffMessage(job: Job): Promise<void> {
+    const orgId = String(job.payload.org_id ?? "");
+    const w = chatWords((await this.d.store.context(orgId)).locale);
+    const preset = job.payload.preset;
+    const text = preset === "ask_voice_again" ? w.askVoiceAgain : preset === "ask_photo_again" ? w.askPhotoAgain : String(job.payload.text ?? "").trim();
+    if (text) await this.tellOrg(orgId, text);
   }
 
   /** Tâche `subscription_notice` : conditions de fin (avant la fin, à la fin, fin de la grâce). */

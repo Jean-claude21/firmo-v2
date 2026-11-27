@@ -25,7 +25,7 @@ function Conversations() {
   const time = (iso: string) => `${date(iso, locale)} ${new Date(iso).toLocaleTimeString(locale === "en" ? "en-GB" : "fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
 
   return (
-    <div>
+    <div className="px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.conversations} />
       <div className="mb-4 inline-flex rounded-[var(--radius-field)] border border-line bg-surface p-1" role="tablist">
         {(["messages", "jobs"] as const).map((k) => (

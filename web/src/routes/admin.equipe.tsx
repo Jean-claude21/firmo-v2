@@ -5,7 +5,7 @@ import { Button, Card, ErrorBox, Field, Input, Notice, PageTitle, Select, Skelet
 import { api, type ApiError, useApi } from "@/lib/api";
 import { date } from "@/lib/format";
 import { useI18n } from "@/l10n";
-import { useStaff } from "./admin";
+import { useStaff } from "@/lib/staff";
 
 export const Route = createFileRoute("/admin/equipe")({ component: Team });
 
@@ -36,7 +36,7 @@ function Team() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.staff} subtitle={S.intro} />
       {isAdmin && (
         <Card>

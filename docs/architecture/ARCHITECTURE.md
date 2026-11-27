@@ -45,7 +45,8 @@ firmo/
 | Qui | Comment | Jeton |
 |---|---|---|
 | Artisan dans le chat | identifiant de messagerie (`channel_identities`) | — |
-| Artisan sur le web | lien à usage unique (15 min, haché en base) envoyé dans le chat → échange | JWT Firmo `scope=org`, 7 jours |
+| Artisan sur le web | lien réutilisable pendant sa durée (60 min, haché en base) envoyé dans le chat → échange | JWT Firmo `scope=org`, 7 jours |
+| Équipe depuis le chat | « ADMIN » depuis une identité autorisée → lien à usage unique (10 min) | JWT Firmo `scope=staff` |
 | Client de l'artisan | jeton de partage du document (non devinable, révocable) | — |
 | Admin | e-mail + mot de passe Neon Auth, vérifiés par l'API, rôle en SQL | JWT Firmo `scope=staff`, 12 h |
 

@@ -103,8 +103,8 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
   app.get("/v1/admin/organizations/:id", staff, async (c) => {
     const id = c.req.param("id");
     const o = await sqlOne<Row>(d.pool, "select * from public.organizations where id = $1", [id]);
-    const [identities, documents, messages, subscriptions, payments, stats] = await Promise.all([
-      sql<Row>(d.pool, "select channel, display_name, created_at, last_seen_at from public.channel_identities where org_id = $1", [id]),
+    const [identities, documents, messages, subscriptions, payments, stats, ent, reveal, counts] = await Promise.all([
+      sql<Row>(d.pool, "select id, channel, display_name, created_at, last_seen_at from public.channel_identities where org_id = $1 order by last_seen_at desc", [id]),
       sql<Row>(d.pool, `select d.id, d.type_code, d.status, d.number, d.total_minor::text as total_minor, d.created_at,
                                coalesce(d.client_snapshot ->> 'name', c.name) as client
                         from public.documents d left join public.clients c on c.id = d.client_id
@@ -113,12 +113,31 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
       sql<Row>(d.pool, "select kind, quota, used, period_start, period_end, ended_at from public.subscriptions where org_id = $1 order by created_at desc", [id]),
       sql<Row>(d.pool, "select id, reference, status, kind, amount_minor::text as amount_minor, currency_code, provider_code, provider_reference, created_at from public.subscription_payments where org_id = $1 order by created_at desc limit 10", [id]),
       sqlOne<{ v: unknown }>(d.pool, "select app.org_dashboard($1) as v", [id]),
+      sql<Row>(d.pool, `select e.*, app.label(p.labels, 'fr') as plan_label from app.entitlement($1) e
+                        left join public.subscriptions s on s.id = e.subscription_id left join public.plans p on p.id = s.plan_id`, [id]),
+      sqlOne<{ until: Date | null }>(d.pool, "select app.prices_revealed($1, $2) as until", [actor(c), id]),
+      sqlOne<Row>(d.pool, `select (select count(*) from public.documents where org_id = $1)::int as documents,
+                                  (select count(*) from public.subscription_payments where org_id = $1)::int as payments,
+                                  (select max(created_at) from public.messages where org_id = $1 and direction = 'in') as last_activity,
+                                  (select string_agg(distinct key || '=' || value, ', ') from jsonb_each_text(o.legal_ids)) as legal
+                           from public.organizations o where o.id = $1`, [id]),
     ]);
+    const shown = Boolean(reveal.until);
+    const e = ent[0];
     return c.json({
-      org: { id: o.id, name: o.name, status: o.status, country: o.country_code, currency: o.currency_code, locale: o.locale, trade: o.trade_code, phone: o.phone, email: o.email, template: o.template_code, createdAt: o.created_at.toISOString() },
+      org: {
+        id: o.id, name: o.name, status: o.status, country: o.country_code, currency: o.currency_code, locale: o.locale, trade: o.trade_code,
+        tradeLabel: o.trade_label, phone: o.phone, email: o.email, address: o.address, template: o.template_code, brandColor: o.brand_color,
+        hasLogo: Boolean(o.logo_key), legal: counts.legal, createdAt: o.created_at.toISOString(),
+      },
+      entitlement: e ? { kind: e.kind, quota: e.quota, used: e.used, remaining: e.remaining, periodEnd: e.period_end?.toISOString?.() ?? null, planLabel: e.plan_label } : null,
+      counts: { documents: counts.documents, payments: counts.payments },
+      lastActivity: counts.last_activity?.toISOString?.() ?? null,
+      // P-74 : montants des documents visibles seulement après un motif (jusqu'à cette heure).
+      pricesRevealedUntil: reveal.until?.toISOString?.() ?? null,
       stats: stats.v,
-      identities: identities.map((r) => ({ channel: r.channel, name: r.display_name, createdAt: r.created_at.toISOString(), lastSeenAt: r.last_seen_at.toISOString() })),
-      documents: documents.map((r) => ({ id: r.id, type: r.type_code, status: r.status, number: r.number, totalMinor: r.total_minor, client: r.client, createdAt: r.created_at.toISOString() })),
+      identities: identities.map((r) => ({ id: r.id, channel: r.channel, name: r.display_name, createdAt: r.created_at.toISOString(), lastSeenAt: r.last_seen_at.toISOString() })),
+      documents: documents.map((r) => ({ id: r.id, type: r.type_code, status: r.status, number: r.number, totalMinor: shown ? r.total_minor : null, client: r.client, createdAt: r.created_at.toISOString() })),
       messages: messages.map((r) => ({ id: r.id, direction: r.direction, kind: r.kind, text: r.text, status: r.status, error: r.error, createdAt: r.created_at.toISOString() })),
       subscriptions: subscriptions.map((r) => ({ kind: r.kind, quota: r.quota, used: r.used, periodStart: r.period_start.toISOString(), periodEnd: r.period_end?.toISOString?.() ?? null, endedAt: r.ended_at?.toISOString?.() ?? null })),
       payments: payments.map((r) => ({ id: r.id, reference: r.reference, status: r.status, kind: r.kind, amountMinor: r.amount_minor, currency: r.currency_code, provider: r.provider_code, providerReference: r.provider_reference, createdAt: r.created_at.toISOString() })),
@@ -126,14 +145,14 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
   });
 
   app.post("/v1/admin/organizations/:id/status", admin, async (c) => {
-    const { status } = await parseJson(c, z.object({ status: z.enum(["active", "suspended"]) }));
-    await sql(d.pool, "select app.set_org_status($1, $2, $3)", [c.req.param("id"), status, actor(c)]);
+    const { status, reason } = await parseJson(c, z.object({ status: z.enum(["active", "suspended"]), reason: z.string().trim().min(5).max(500) }));
+    await sql(d.pool, "select app.set_org_status($1, $2, $3, $4)", [c.req.param("id"), status, actor(c), reason]);
     return c.json({ ok: true });
   });
 
   app.post("/v1/admin/organizations/:id/grant", admin, async (c) => {
-    const { planCode } = await parseJson(c, z.object({ planCode: z.string().max(40) }));
-    await sql(d.pool, "select app.grant_period($1, $2, $3)", [c.req.param("id"), planCode, actor(c)]);
+    const { planCode, reason } = await parseJson(c, z.object({ planCode: z.string().max(40), reason: z.string().trim().min(5).max(500) }));
+    await sql(d.pool, "select app.grant_period($1, $2, $3, $4)", [c.req.param("id"), planCode, actor(c), reason]);
     return c.json({ ok: true });
   });
 

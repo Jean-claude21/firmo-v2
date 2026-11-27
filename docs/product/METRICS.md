@@ -20,6 +20,11 @@ Aucune donnée personnelle dans les propriétés : identifiants techniques et va
 | `subscription_paid` | paiement de l'abonnement confirmé | `plan_code`, `plan_version`, `provider` |
 | `top_up_paid` | recharge confirmée | `units`, `provider` |
 | `subscription_notice` | rappel de fin de période envoyé dans le chat | `stage` (ending, ended, closed) |
+| `data_deletion_requested` / `data_export_requested` | demande sur les données | `origin` (chat, web) |
+| `data_deleted` | suppression exécutée par l'équipe | `kept_documents` |
+
+Relais PostHog (P-80) : `app.analytics_batch` ne transmet que des propriétés techniques connues
+(liste blanche en SQL) ; `distinct_id` = identifiant de l'organisation, jamais un nom ni un numéro.
 
 ## KPIs (console d'administration)
 

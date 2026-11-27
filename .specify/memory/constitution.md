@@ -43,7 +43,8 @@
 - Aucun secret dans le dépôt ni dans le web : Doppler, puis variables d'environnement Coolify.
 - Tout webhook (WhatsApp, Telegram, paiement) est vérifié par signature ou secret, traité de façon
   idempotente et journalisé brut.
-- Les liens de session envoyés dans le chat sont à usage unique, courts, stockés hachés.
+- Les liens envoyés dans le chat sont courts et stockés hachés : réutilisables pendant leur durée
+  pour l'espace artisan, à usage unique pour l'administration (décision 0007).
 - Toute action d'administration écrit dans `audit_log` (qui, quoi, quand, avant, après).
 - Un document émis est immuable : toute correction produit une nouvelle version.
 
@@ -109,4 +110,4 @@ Changer un élément de ce tableau exige une décision dans `docs/architecture/d
   l'architecture, version mise à jour (MAJEUR : principe retiré ou redéfini ; MINEUR : ajouté ;
   CORRECTIF : clarification).
 
-**Version**: 1.0.1 | **Ratified**: 2026-11-14 | **Last Amended**: 2026-11-26
+**Version**: 1.1.0 | **Ratified**: 2026-11-14 | **Last Amended**: 2026-11-26

@@ -15,6 +15,9 @@ import { registerChannelRoutes } from "./routes/channels.js";
 import { registerPortalRoutes } from "./routes/portal.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { registerAdminRoutes } from "./routes/admin.js";
+import { registerAdminV1Routes } from "./routes/admin-v1.js";
+import { newToken } from "./lib/session.js";
+import { posthogSink, startMaintenance } from "./ops/maintenance.js";
 import { chariowProvider, monerooProvider, type PaymentProvider, simulatorProvider } from "./billing/providers.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
@@ -98,7 +101,17 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
       flows: config.WHATSAPP_FLOW_PROFILE_ID ? { profile: config.WHATSAPP_FLOW_PROFILE_ID } : {},
     }));
   }
-  const engine = new ConversationEngine({ store: conversations, documents, reader, channels, files, render, webUrl: config.WEB_URL });
+  const engine = new ConversationEngine({
+    store: conversations, documents, reader, channels, files, render, webUrl: config.WEB_URL,
+    // P-76 : « ADMIN » depuis une identité autorisée → lien d'administration à usage unique.
+    adminLink: async (identityId) => {
+      const { token, hash } = newToken();
+      const r = await pool.query<{ minutes: number | null }>("select app.create_admin_link($1, $2) as minutes", [identityId, hash]);
+      const minutes = r.rows[0]?.minutes ?? null;
+      return minutes ? { url: `${config.WEB_URL.replace(/\/$/, "")}/admin/acces/${token}`, minutes } : null;
+    },
+  });
+  worker.on("staff_message", (job) => engine.staffMessage(job));
   worker.on("process_message", (job) => engine.handleJob(job));
   worker.on("notify_subscription", (job) => engine.notifySubscription(job));
   worker.on("subscription_notice", (job) => engine.periodNotice(job));
@@ -112,6 +125,7 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
 
   const modules: RouteModule[] = [
     (app) => registerAdminRoutes(app, { pool, signer: ctx.signer, env: config.FIRMO_ENV, neonAuthUrl: config.NEON_AUTH_URL, webUrl: config.WEB_URL }),
+    (app) => registerAdminV1Routes(app, { pool, signer: ctx.signer, webUrl: config.WEB_URL, portalLink: (orgId) => conversations.accessLink(orgId, "portal", "/app"), files }),
     (app) => registerBillingRoutes(app, { pool, signer: ctx.signer, providers, apiUrl: config.API_URL, webUrl: config.WEB_URL, conversations }),
     (app) => registerPortalRoutes(app, { pool, signer: ctx.signer, documents, render, files, webUrl: config.WEB_URL }),
     (app) => registerChannelRoutes(app, {
@@ -125,5 +139,13 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
     }),
   ];
 
+  // Spec 014 : relais PostHog (seulement avec une clé) et suppression des médias sources.
+  if (config.WORKER_ENABLED !== "false") {
+    startMaintenance({
+      pool, files,
+      sink: config.POSTHOG_PROJECT_KEY ? posthogSink({ host: config.POSTHOG_HOST, projectKey: config.POSTHOG_PROJECT_KEY }) : null,
+      log: (m, e) => console.error(m, e ?? ""),
+    });
+  }
   return { modules, documents, files, render, engine, conversations, reader };
 }

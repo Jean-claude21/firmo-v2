@@ -24,10 +24,10 @@ select app.publish_plan('standard', 'XOF', '{"fr":"Firmo mensuel"}', 2500, 40, 3
 select is((select version from public.plans where id = :'plan2'), 3, 'nouvelle version d''offre (après la v2 de la spec 011)');
 select is((select count(*)::int from public.plans where code = 'standard' and currency_code = 'XOF' and active), 1, 'une seule version active');
 
-select app.grant_period(:'org', 'standard', :'admin');
+select app.grant_period(:'org', 'standard', :'admin', 'geste commercial pour un artisan pilote');
 select is((select kind || '/' || quota from app.entitlement(:'org')), 'grant/40', 'accès offert avec la nouvelle offre');
 
-select app.set_org_status(:'org', 'suspended', :'admin');
+select app.set_org_status(:'org', 'suspended', :'admin', 'usage contraire aux conditions');
 select throws_ok(format('select app.create_draft(%L, %L, %L)', :'org', 'quote', '[]'), '42501', null, 'organisation suspendue : plus de brouillon');
 
 select throws_ok($$ select app.grant_staff_by_email('inconnu@example.test', 'support', null) $$, 'P0002', null, 'compte inconnu refusé');

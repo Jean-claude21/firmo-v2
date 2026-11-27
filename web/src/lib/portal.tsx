@@ -25,6 +25,11 @@ export interface Me {
     paymentMethods: string | null;
     footerNote: string | null;
     status: string;
+    tradeLabel: string | null;
+    defaultValidityDays: number | null;
+    defaultDeliveryText: string | null;
+    defaultWarrantyText: string | null;
+    defaultDepositBp: number | null;
   };
   currency: Currency;
   reference: {
@@ -69,6 +74,10 @@ export interface DocumentSummary {
   issueDate: string | null;
   validUntil: string | null;
   createdAt: string;
+  updatedAt?: string;
+  title?: string | null;
+  lines?: number;
+  sections?: number;
 }
 
 export interface DocumentLine {
@@ -85,13 +94,27 @@ export interface DocumentLine {
   toConfirm: string[];
 }
 
-export interface DocumentDetail extends DocumentSummary {
+export interface DocumentDetail extends Omit<DocumentSummary, "lines" | "sections" | "updatedAt"> {
   title: string | null;
+  summary: string | null;
+  site: string | null;
+  deliveryText: string | null;
+  warrantyText: string | null;
+  assumptions: string | null;
+  validityDays: number | null;
+  depositBp: number | null;
+  revision: number;
+  manualNumber: boolean;
+  sourceType: string | null;
+  sharedAt: string | null;
+  views: { first: string; last: string; count: number } | null;
+  updatedAt: string;
+  clauses: Array<{ position: number; clauseId: string | null; title: string | null; body: string }>;
   notes: string | null;
   locale: string;
   template: string;
   currency: Currency;
-  client: { id: string | null; name: string | null; phone: string | null; email: string | null; address: string | null };
+  client: { id: string | null; name: string | null; phone: string | null; email: string | null; address: string | null; legalId?: string | null };
   issuer: Record<string, unknown> | null;
   expired: boolean;
   applyTax: boolean;
@@ -100,8 +123,8 @@ export interface DocumentDetail extends DocumentSummary {
   subtotalMinor: string;
   adjustmentsTotalMinor: string;
   depositMinor: string | null;
-  sections: Array<{ position: number; title: string | null; showSubtotal: boolean; subtotalMinor: string }>;
-  adjustments: Array<{ position: number; label: string; mode: "percent" | "amount"; sign: 1 | -1; base: string; sectionPosition: number | null; rateBp: number | null; valueMinor: string | null; amountMinor: string | null }>;
+  sections: Array<{ position: number; title: string | null; showSubtotal: boolean; subtotalMinor: string; lines: DocumentLine[] }>;
+  adjustments: Array<{ position: number; label: string; mode: "percent" | "amount"; sign: 1 | -1; base: string; sectionPosition: number | null; rateBp: number | null; valueMinor: string | null; baseMinor: string | null; amountMinor: string | null; toConfirm: boolean }>;
   taxMinor: string;
   sourceNumber: string | null;
   acceptable: boolean;

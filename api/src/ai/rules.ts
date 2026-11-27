@@ -5,7 +5,7 @@ import type { AiCall, AiReader, ReadContext, ReadLine, SaleReading, TurnContext,
 // 10000 ») et le format de secours annoncé dans le chat : « quantité | libellé | prix ».
 
 const AMOUNT = String.raw`(\d[\d\s.,']*(?:\s?(?:k|mille|millions?))?)\s*(?:f\s?cfa|fcfa|cfa|francs?|f|€|\$)?`;
-const UNIT = String.raw`(m2|m²|m3|m³|ml|m|kg|t|l|h|j|sacs?|voyages?|jours?|heures?|litres?|lots?|forfaits?|barres?|boites?|boîtes?|feuilles?|pieces?|pièces?|unites?|unités?)`;
+const UNIT = String.raw`(m2|m²|m3|m³|ml|m[eè]tres?|m|kg|t|l|h|j|sacs?|voyages?|jours?|heures?|litres?|lots?|forfaits?|barres?|boites?|boîtes?|feuilles?|pieces?|pièces?|unites?|unités?)`;
 
 /** « 3 | Barre tube 80 x 40 | 17 000 », « forfait | Pose | 60 000 » (format de secours). */
 function readPipe(seg: string): ReadLine | null {
@@ -27,7 +27,11 @@ export function readSimple(text: string): SaleReading {
     .filter(Boolean);
   const lines: ReadLine[] = [];
   const adjustments: SaleReading["adjustments"] = [];
-  for (const seg of segments) {
+  for (const raw of segments) {
+    // « Devis pour la Clinique Saint-Luc : 3 climatiseurs à 285000 » : l'en-tête (type, client) est
+    // retiré avant de lire la ligne ; le client est repris plus bas.
+    const header = /^([^\d|:]*\b(?:devis|facture|proforma|pour|client|quote|invoice)\b[^\d|:]*):\s*(.+)$/i.exec(raw);
+    const seg = header ? header[2]!.trim() : raw;
     const pipe = seg.includes("|") ? readPipe(seg) : null;
     if (pipe) {
       lines.push(pipe);
@@ -41,7 +45,7 @@ export function readSimple(text: string): SaleReading {
       continue;
     }
     // « 2 portes à 45000 », « 3 m2 carrelage à 8000 », « 4 sacs de ciment x 5000 »
-    const unitPrice = new RegExp(String.raw`^(\d+(?:[.,]\d{1,3})?)\s+(?:${UNIT}\b\s*(?:de\s+)?)?(.+?)\s+(?:a|à|@|x|au prix de|prix)\s+${AMOUNT}\s*(?:l'unite|l'unité|chacune?|piece|pièce|each)?$`, "i").exec(seg);
+    const unitPrice = new RegExp(String.raw`^(\d+(?:[.,]\d{1,3})?)\s+(?:${UNIT}(?=\s)\s*(?:de\s+)?)?(.+?)\s+(?:a|à|@|x|au prix de|prix)\s+${AMOUNT}\s*(?:l'unite|l'unité|chacune?|piece|pièce|each)?$`, "i").exec(seg);
     if (unitPrice) {
       lines.push({ label: unitPrice[3]!.trim(), quantityText: unitPrice[1]!, unit: unitPrice[2] ?? null, unitPriceText: unitPrice[4]!.trim(), lineTotalText: null });
       continue;
@@ -69,7 +73,7 @@ export function readSimple(text: string): SaleReading {
       lines.push({ label: qtyOnly[2]!.trim(), quantityText: qtyOnly[1]!, unit: null, unitPriceText: null, lineTotalText: null });
     }
   }
-  const client = /\b(?:pour|client)\s*:?\s+([A-ZÀ-Ý][\w'À-ÿ-]*(?:\s+[A-ZÀ-Ý][\w'À-ÿ-]*){0,4})/.exec(text)?.[1] ?? null;
+  const client = /\b(?:pour|client)\s*:?\s+(?:(?:la|le|les|l'|du|de la)\s+)?([A-ZÀ-Ý][\w'À-ÿ-]*(?:\s+[A-ZÀ-Ý][\w'À-ÿ-]*){0,4})/.exec(text)?.[1] ?? null;
   const documentType = /\bfacture\b|\binvoice\b/i.test(text) ? "invoice" : /\bproforma\b/i.test(text) ? "proforma" : null;
   return {
     documentType,
@@ -88,7 +92,7 @@ export function decideSimple(message: string, ctx: Pick<TurnContext, "draft">): 
   const base: TurnDecision = { intent: "other", corrections: [], reply: null, searchQuery: null, targetType: null, startNewDocument: false };
   const t = message.trim().toLowerCase();
   if (/^(bonjour|bonsoir|salut|hello|hi|coucou|bjr)\b/.test(t) && !/\d/.test(t)) return { ...base, intent: "greeting" };
-  if (/suppression de mes donn[ée]es/.test(t)) return { ...base, intent: "delete_data" };
+  if (/suppression de mes donn[ée]es|delet(e|ion of) my data/.test(t)) return { ...base, intent: "delete_data" };
   if (readSimple(message).sections.length) return { ...base, intent: "source", startNewDocument: !ctx.draft };
   return base;
 }

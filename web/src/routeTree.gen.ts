@@ -12,25 +12,40 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as ConditionsRouteImport } from './routes/conditions'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FormatsRouteImport } from './routes/formats'
+import { Route as SuppressionDonneesRouteImport } from './routes/suppression-donnees'
 import { Route as AccesTokenRouteImport } from './routes/acces.$token'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAbonnementsRouteImport } from './routes/admin.abonnements'
+import { Route as AdminClientsRouteImport } from './routes/admin.clients'
 import { Route as AdminConfigurationRouteImport } from './routes/admin.configuration'
 import { Route as AdminConversationsRouteImport } from './routes/admin.conversations'
+import { Route as AdminDocumentsRouteImport } from './routes/admin.documents'
+import { Route as AdminDonneesRouteImport } from './routes/admin.donnees'
 import { Route as AdminEquipeRouteImport } from './routes/admin.equipe'
 import { Route as AdminIaRouteImport } from './routes/admin.ia'
+import { Route as AdminIdentitesRouteImport } from './routes/admin.identites'
 import { Route as AdminJournalRouteImport } from './routes/admin.journal'
+import { Route as AdminPaiementsRouteImport } from './routes/admin.paiements'
+import { Route as AdminPilotageRouteImport } from './routes/admin.pilotage'
 import { Route as AdminSimulateurRouteImport } from './routes/admin.simulateur'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAbonnementRouteImport } from './routes/app.abonnement'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppProfilRouteImport } from './routes/app.profil'
 import { Route as DTokenRouteImport } from './routes/d.$token'
+import { Route as AdminAccesTokenRouteImport } from './routes/admin.acces.$token'
+import { Route as AdminIncidentsIndexRouteImport } from './routes/admin.incidents.index'
 import { Route as AdminOrganisationsIndexRouteImport } from './routes/admin.organisations.index'
 import { Route as AdminOrganisationsIdRouteImport } from './routes/admin.organisations.$id'
 import { Route as AppDocumentsIndexRouteImport } from './routes/app.documents.index'
 import { Route as AppDocumentsIdRouteImport } from './routes/app.documents.$id'
 import { Route as AppDocumentsNouveauRouteImport } from './routes/app.documents.nouveau'
 import { Route as PaiementSimulateurIdRouteImport } from './routes/paiement.simulateur.$id'
+import { Route as AdminIncidentsTypeIdRouteImport } from './routes/admin.incidents.$type.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,6 +62,31 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConditionsRoute = ConditionsRouteImport.update({
+  id: '/conditions',
+  path: '/conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormatsRoute = FormatsRouteImport.update({
+  id: '/formats',
+  path: '/formats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuppressionDonneesRoute = SuppressionDonneesRouteImport.update({
+  id: '/suppression-donnees',
+  path: '/suppression-donnees',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccesTokenRoute = AccesTokenRouteImport.update({
   id: '/acces/$token',
   path: '/acces/$token',
@@ -55,6 +95,16 @@ const AccesTokenRoute = AccesTokenRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAbonnementsRoute = AdminAbonnementsRouteImport.update({
+  id: '/abonnements',
+  path: '/abonnements',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClientsRoute = AdminClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminConfigurationRoute = AdminConfigurationRouteImport.update({
@@ -67,6 +117,16 @@ const AdminConversationsRoute = AdminConversationsRouteImport.update({
   path: '/conversations',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDocumentsRoute = AdminDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDonneesRoute = AdminDonneesRouteImport.update({
+  id: '/donnees',
+  path: '/donnees',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEquipeRoute = AdminEquipeRouteImport.update({
   id: '/equipe',
   path: '/equipe',
@@ -77,9 +137,24 @@ const AdminIaRoute = AdminIaRouteImport.update({
   path: '/ia',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIdentitesRoute = AdminIdentitesRouteImport.update({
+  id: '/identites',
+  path: '/identites',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminJournalRoute = AdminJournalRouteImport.update({
   id: '/journal',
   path: '/journal',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaiementsRoute = AdminPaiementsRouteImport.update({
+  id: '/paiements',
+  path: '/paiements',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPilotageRoute = AdminPilotageRouteImport.update({
+  id: '/pilotage',
+  path: '/pilotage',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSimulateurRoute = AdminSimulateurRouteImport.update({
@@ -112,6 +187,16 @@ const DTokenRoute = DTokenRouteImport.update({
   path: '/d/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAccesTokenRoute = AdminAccesTokenRouteImport.update({
+  id: '/acces/$token',
+  path: '/acces/$token',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminIncidentsIndexRoute = AdminIncidentsIndexRouteImport.update({
+  id: '/incidents/',
+  path: '/incidents/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrganisationsIndexRoute = AdminOrganisationsIndexRouteImport.update({
   id: '/organisations/',
   path: '/organisations/',
@@ -142,17 +227,34 @@ const PaiementSimulateurIdRoute = PaiementSimulateurIdRouteImport.update({
   path: '/paiement/simulateur/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIncidentsTypeIdRoute = AdminIncidentsTypeIdRouteImport.update({
+  id: '/incidents/$type/$id',
+  path: '/incidents/$type/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/formats': typeof FormatsRoute
+  '/suppression-donnees': typeof SuppressionDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
+  '/admin/abonnements': typeof AdminAbonnementsRoute
+  '/admin/clients': typeof AdminClientsRoute
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
+  '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/donnees': typeof AdminDonneesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/ia': typeof AdminIaRoute
+  '/admin/identites': typeof AdminIdentitesRoute
   '/admin/journal': typeof AdminJournalRoute
+  '/admin/paiements': typeof AdminPaiementsRoute
+  '/admin/pilotage': typeof AdminPilotageRoute
   '/admin/simulateur': typeof AdminSimulateurRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/clients': typeof AppClientsRoute
@@ -160,21 +262,36 @@ export interface FileRoutesByFullPath {
   '/d/$token': typeof DTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/admin/acces/$token': typeof AdminAccesTokenRoute
   '/admin/organisations/$id': typeof AdminOrganisationsIdRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
   '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
+  '/admin/incidents/': typeof AdminIncidentsIndexRoute
   '/admin/organisations/': typeof AdminOrganisationsIndexRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
+  '/admin/incidents/$type/$id': typeof AdminIncidentsTypeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/formats': typeof FormatsRoute
+  '/suppression-donnees': typeof SuppressionDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
+  '/admin/abonnements': typeof AdminAbonnementsRoute
+  '/admin/clients': typeof AdminClientsRoute
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
+  '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/donnees': typeof AdminDonneesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/ia': typeof AdminIaRoute
+  '/admin/identites': typeof AdminIdentitesRoute
   '/admin/journal': typeof AdminJournalRoute
+  '/admin/paiements': typeof AdminPaiementsRoute
+  '/admin/pilotage': typeof AdminPilotageRoute
   '/admin/simulateur': typeof AdminSimulateurRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/clients': typeof AppClientsRoute
@@ -182,24 +299,39 @@ export interface FileRoutesByTo {
   '/d/$token': typeof DTokenRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/admin/acces/$token': typeof AdminAccesTokenRoute
   '/admin/organisations/$id': typeof AdminOrganisationsIdRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
   '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
+  '/admin/incidents': typeof AdminIncidentsIndexRoute
   '/admin/organisations': typeof AdminOrganisationsIndexRoute
   '/app/documents': typeof AppDocumentsIndexRoute
+  '/admin/incidents/$type/$id': typeof AdminIncidentsTypeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/formats': typeof FormatsRoute
+  '/suppression-donnees': typeof SuppressionDonneesRoute
   '/acces/$token': typeof AccesTokenRoute
+  '/admin/abonnements': typeof AdminAbonnementsRoute
+  '/admin/clients': typeof AdminClientsRoute
   '/admin/configuration': typeof AdminConfigurationRoute
   '/admin/conversations': typeof AdminConversationsRoute
+  '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/donnees': typeof AdminDonneesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/ia': typeof AdminIaRoute
+  '/admin/identites': typeof AdminIdentitesRoute
   '/admin/journal': typeof AdminJournalRoute
+  '/admin/paiements': typeof AdminPaiementsRoute
+  '/admin/pilotage': typeof AdminPilotageRoute
   '/admin/simulateur': typeof AdminSimulateurRoute
   '/app/abonnement': typeof AppAbonnementRoute
   '/app/clients': typeof AppClientsRoute
@@ -207,12 +339,15 @@ export interface FileRoutesById {
   '/d/$token': typeof DTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/admin/acces/$token': typeof AdminAccesTokenRoute
   '/admin/organisations/$id': typeof AdminOrganisationsIdRoute
   '/app/documents/$id': typeof AppDocumentsIdRoute
   '/app/documents/nouveau': typeof AppDocumentsNouveauRoute
   '/paiement/simulateur/$id': typeof PaiementSimulateurIdRoute
+  '/admin/incidents/': typeof AdminIncidentsIndexRoute
   '/admin/organisations/': typeof AdminOrganisationsIndexRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
+  '/admin/incidents/$type/$id': typeof AdminIncidentsTypeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -220,12 +355,24 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/formats'
+    | '/suppression-donnees'
     | '/acces/$token'
+    | '/admin/abonnements'
+    | '/admin/clients'
     | '/admin/configuration'
     | '/admin/conversations'
+    | '/admin/documents'
+    | '/admin/donnees'
     | '/admin/equipe'
     | '/admin/ia'
+    | '/admin/identites'
     | '/admin/journal'
+    | '/admin/paiements'
+    | '/admin/pilotage'
     | '/admin/simulateur'
     | '/app/abonnement'
     | '/app/clients'
@@ -233,21 +380,36 @@ export interface FileRouteTypes {
     | '/d/$token'
     | '/admin/'
     | '/app/'
+    | '/admin/acces/$token'
     | '/admin/organisations/$id'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
     | '/paiement/simulateur/$id'
+    | '/admin/incidents/'
     | '/admin/organisations/'
     | '/app/documents/'
+    | '/admin/incidents/$type/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/formats'
+    | '/suppression-donnees'
     | '/acces/$token'
+    | '/admin/abonnements'
+    | '/admin/clients'
     | '/admin/configuration'
     | '/admin/conversations'
+    | '/admin/documents'
+    | '/admin/donnees'
     | '/admin/equipe'
     | '/admin/ia'
+    | '/admin/identites'
     | '/admin/journal'
+    | '/admin/paiements'
+    | '/admin/pilotage'
     | '/admin/simulateur'
     | '/app/abonnement'
     | '/app/clients'
@@ -255,23 +417,38 @@ export interface FileRouteTypes {
     | '/d/$token'
     | '/admin'
     | '/app'
+    | '/admin/acces/$token'
     | '/admin/organisations/$id'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
     | '/paiement/simulateur/$id'
+    | '/admin/incidents'
     | '/admin/organisations'
     | '/app/documents'
+    | '/admin/incidents/$type/$id'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/app'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/formats'
+    | '/suppression-donnees'
     | '/acces/$token'
+    | '/admin/abonnements'
+    | '/admin/clients'
     | '/admin/configuration'
     | '/admin/conversations'
+    | '/admin/documents'
+    | '/admin/donnees'
     | '/admin/equipe'
     | '/admin/ia'
+    | '/admin/identites'
     | '/admin/journal'
+    | '/admin/paiements'
+    | '/admin/pilotage'
     | '/admin/simulateur'
     | '/app/abonnement'
     | '/app/clients'
@@ -279,18 +456,26 @@ export interface FileRouteTypes {
     | '/d/$token'
     | '/admin/'
     | '/app/'
+    | '/admin/acces/$token'
     | '/admin/organisations/$id'
     | '/app/documents/$id'
     | '/app/documents/nouveau'
     | '/paiement/simulateur/$id'
+    | '/admin/incidents/'
     | '/admin/organisations/'
     | '/app/documents/'
+    | '/admin/incidents/$type/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
+  ConditionsRoute: typeof ConditionsRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ContactRoute: typeof ContactRoute
+  FormatsRoute: typeof FormatsRoute
+  SuppressionDonneesRoute: typeof SuppressionDonneesRoute
   AccesTokenRoute: typeof AccesTokenRoute
   DTokenRoute: typeof DTokenRoute
   PaiementSimulateurIdRoute: typeof PaiementSimulateurIdRoute
@@ -319,6 +504,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conditions': {
+      id: '/conditions'
+      path: '/conditions'
+      fullPath: '/conditions'
+      preLoaderRoute: typeof ConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formats': {
+      id: '/formats'
+      path: '/formats'
+      fullPath: '/formats'
+      preLoaderRoute: typeof FormatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suppression-donnees': {
+      id: '/suppression-donnees'
+      path: '/suppression-donnees'
+      fullPath: '/suppression-donnees'
+      preLoaderRoute: typeof SuppressionDonneesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/acces/$token': {
       id: '/acces/$token'
       path: '/acces/$token'
@@ -331,6 +551,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/abonnements': {
+      id: '/admin/abonnements'
+      path: '/abonnements'
+      fullPath: '/admin/abonnements'
+      preLoaderRoute: typeof AdminAbonnementsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/clients': {
+      id: '/admin/clients'
+      path: '/clients'
+      fullPath: '/admin/clients'
+      preLoaderRoute: typeof AdminClientsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/configuration': {
@@ -347,6 +581,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConversationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/documents': {
+      id: '/admin/documents'
+      path: '/documents'
+      fullPath: '/admin/documents'
+      preLoaderRoute: typeof AdminDocumentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/donnees': {
+      id: '/admin/donnees'
+      path: '/donnees'
+      fullPath: '/admin/donnees'
+      preLoaderRoute: typeof AdminDonneesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/equipe': {
       id: '/admin/equipe'
       path: '/equipe'
@@ -361,11 +609,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/identites': {
+      id: '/admin/identites'
+      path: '/identites'
+      fullPath: '/admin/identites'
+      preLoaderRoute: typeof AdminIdentitesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/journal': {
       id: '/admin/journal'
       path: '/journal'
       fullPath: '/admin/journal'
       preLoaderRoute: typeof AdminJournalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/paiements': {
+      id: '/admin/paiements'
+      path: '/paiements'
+      fullPath: '/admin/paiements'
+      preLoaderRoute: typeof AdminPaiementsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pilotage': {
+      id: '/admin/pilotage'
+      path: '/pilotage'
+      fullPath: '/admin/pilotage'
+      preLoaderRoute: typeof AdminPilotageRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/simulateur': {
@@ -410,6 +679,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/acces/$token': {
+      id: '/admin/acces/$token'
+      path: '/acces/$token'
+      fullPath: '/admin/acces/$token'
+      preLoaderRoute: typeof AdminAccesTokenRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/incidents/': {
+      id: '/admin/incidents/'
+      path: '/incidents'
+      fullPath: '/admin/incidents/'
+      preLoaderRoute: typeof AdminIncidentsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/organisations/': {
       id: '/admin/organisations/'
       path: '/organisations'
@@ -452,31 +735,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaiementSimulateurIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/incidents/$type/$id': {
+      id: '/admin/incidents/$type/$id'
+      path: '/incidents/$type/$id'
+      fullPath: '/admin/incidents/$type/$id'
+      preLoaderRoute: typeof AdminIncidentsTypeIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAbonnementsRoute: typeof AdminAbonnementsRoute
+  AdminClientsRoute: typeof AdminClientsRoute
   AdminConfigurationRoute: typeof AdminConfigurationRoute
   AdminConversationsRoute: typeof AdminConversationsRoute
+  AdminDocumentsRoute: typeof AdminDocumentsRoute
+  AdminDonneesRoute: typeof AdminDonneesRoute
   AdminEquipeRoute: typeof AdminEquipeRoute
   AdminIaRoute: typeof AdminIaRoute
+  AdminIdentitesRoute: typeof AdminIdentitesRoute
   AdminJournalRoute: typeof AdminJournalRoute
+  AdminPaiementsRoute: typeof AdminPaiementsRoute
+  AdminPilotageRoute: typeof AdminPilotageRoute
   AdminSimulateurRoute: typeof AdminSimulateurRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminAccesTokenRoute: typeof AdminAccesTokenRoute
   AdminOrganisationsIdRoute: typeof AdminOrganisationsIdRoute
+  AdminIncidentsIndexRoute: typeof AdminIncidentsIndexRoute
   AdminOrganisationsIndexRoute: typeof AdminOrganisationsIndexRoute
+  AdminIncidentsTypeIdRoute: typeof AdminIncidentsTypeIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAbonnementsRoute: AdminAbonnementsRoute,
+  AdminClientsRoute: AdminClientsRoute,
   AdminConfigurationRoute: AdminConfigurationRoute,
   AdminConversationsRoute: AdminConversationsRoute,
+  AdminDocumentsRoute: AdminDocumentsRoute,
+  AdminDonneesRoute: AdminDonneesRoute,
   AdminEquipeRoute: AdminEquipeRoute,
   AdminIaRoute: AdminIaRoute,
+  AdminIdentitesRoute: AdminIdentitesRoute,
   AdminJournalRoute: AdminJournalRoute,
+  AdminPaiementsRoute: AdminPaiementsRoute,
+  AdminPilotageRoute: AdminPilotageRoute,
   AdminSimulateurRoute: AdminSimulateurRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminAccesTokenRoute: AdminAccesTokenRoute,
   AdminOrganisationsIdRoute: AdminOrganisationsIdRoute,
+  AdminIncidentsIndexRoute: AdminIncidentsIndexRoute,
   AdminOrganisationsIndexRoute: AdminOrganisationsIndexRoute,
+  AdminIncidentsTypeIdRoute: AdminIncidentsTypeIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -507,6 +817,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
+  ConditionsRoute: ConditionsRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  ContactRoute: ContactRoute,
+  FormatsRoute: FormatsRoute,
+  SuppressionDonneesRoute: SuppressionDonneesRoute,
   AccesTokenRoute: AccesTokenRoute,
   DTokenRoute: DTokenRoute,
   PaiementSimulateurIdRoute: PaiementSimulateurIdRoute,

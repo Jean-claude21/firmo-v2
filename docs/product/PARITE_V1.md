@@ -87,39 +87,39 @@ Légende : ✅ fait et vérifié · ⬜ à faire · ➕ la v2 fait plus que la v
 
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
-| P-60 | Système de design validé : achromatique, Inter Tight, JetBrains Mono, rayons 0/5 px, aucune ombre | captures | ⬜ |
-| P-61 | **Landing** de la référence : « Tu parles. Firmo rédige. », feuille qui se retourne en document, messagerie, ce qui se passe vraiment, couleurs, « Ce qu'on ne fera jamais », prix, appel final | capture vs référence | ⬜ |
-| P-62 | **Accueil** : documents disponibles ce mois (x / 30), à continuer, récents, téléchargement | capture vs référence | ⬜ |
-| P-63 | **Document** : objet, sections repliables, sous-totaux, onglets détail / conditions / totaux, aperçu PDF, émission avec numéro particulier et quota, dupliquer, en proforma, en facture, partager, télécharger | capture vs référence | ⬜ |
-| P-64 | **Présentation** : aperçu PDF en direct, logo, nom, métier, téléphone, couleur, format des numéros avec aperçu, informations professionnelles (RCCM, NIF, adresse, e-mail), clauses, valeurs par défaut | capture vs référence | ⬜ |
-| P-65 | **Abonnement** : offre, quota, recharge, paiement | capture | ⬜ |
-| P-66 | Pages **Confidentialité**, **Conditions**, **Suppression des données**, **Contact** | captures | ⬜ |
-| P-67 | Page **Formats** : aperçus publics réels du PDF selon les options | capture | ⬜ |
-| P-68 | Liens réutilisables pendant leur durée (configurable dans l'admin), lien expiré expliqué | test | ⬜ |
-| P-69 | États vide, chargement, erreur, lien expiré, accès refusé sur chaque écran | captures | ⬜ |
+| P-60 | Système de design validé : achromatique, Inter Tight, JetBrains Mono, rayons 0/5 px, aucune ombre | captures | ✅ |
+| P-61 | **Landing** de la référence : « Tu parles. Firmo rédige. », feuille qui se retourne en document, messagerie, ce qui se passe vraiment, couleurs, « Ce qu'on ne fera jamais », prix, appel final | capture vs référence | ✅ |
+| P-62 | **Accueil** : documents disponibles ce mois (x / 30), à continuer, récents, téléchargement | capture vs référence | ✅ |
+| P-63 | **Document** : objet, sections repliables, sous-totaux, onglets détail / conditions / totaux, aperçu PDF, émission avec numéro particulier et quota, dupliquer, en proforma, en facture, partager, télécharger | capture vs référence | ✅ |
+| P-64 | **Présentation** : aperçu PDF en direct, logo, nom, métier, téléphone, couleur, format des numéros avec aperçu, informations professionnelles (RCCM, NIF, adresse, e-mail), clauses, valeurs par défaut | capture vs référence | ✅ |
+| P-65 | **Abonnement** : offre, quota, recharge, paiement | capture | ✅ |
+| P-66 | Pages **Confidentialité**, **Conditions**, **Suppression des données**, **Contact** | captures | ✅ |
+| P-67 | Page **Formats** : aperçus publics réels du PDF selon les options | capture | ✅ |
+| P-68 | Liens réutilisables pendant leur durée (configurable dans l'admin), lien expiré expliqué | test | ✅ |
+| P-69 | États vide, chargement, erreur, lien expiré, accès refusé sur chaque écran | captures | ✅ |
 
 ## 6. Administration (spec 013)
 
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
-| P-70 | **Centre de commande** : traitements en cours, incidents ouverts, santé des canaux, temps de génération, file de traitement filtrable, services essentiels, événements récents | capture vs référence | ⬜ |
-| P-71 | **Incidents** : liste, détail avec chronologie du traitement, entrée reçue, relance | capture vs référence | ⬜ |
-| P-72 | **Organisation** : entête, offre, utilisation, canal, activité ; onglets vue générale, documents, paiements, journal ; support : lien d'accès, réinitialiser le quota, message, suspendre | capture vs référence | ⬜ |
-| P-73 | Listes **Documents**, **Conversations** (+ détail), **Paiements**, **Abonnements**, **Offres** (versions), **Clients**, **Identités** | captures | ⬜ |
-| P-74 | **Actions sensibles** : motif obligatoire, reconfirmation, journal append-only ; **affichage des prix** sur motif | pgTAP | ⬜ |
-| P-75 | Configuration des durées d'accès (liens client, admin) | pgTAP | ⬜ |
-| P-76 | **Accès admin depuis le chat** : « ADMIN » depuis une identité autorisée → lien à usage unique de 10 minutes | test | ⬜ |
-| P-77 | Recherche globale (organisation, téléphone, document) | test | ⬜ |
-| P-78 | Pilotage : vues alimentées par des agrégats réels (activation, conversion, coûts, échecs par étape) | capture | ⬜ |
+| P-70 | **Centre de commande** : traitements en cours, incidents ouverts, santé des canaux, temps de génération, file de traitement filtrable, services essentiels, événements récents | capture vs référence | ✅ |
+| P-71 | **Incidents** : liste, détail avec chronologie du traitement, entrée reçue, relance | capture vs référence | ✅ |
+| P-72 | **Organisation** : entête, offre, utilisation, canal, activité ; onglets vue générale, documents, paiements, journal ; support : lien d'accès, réinitialiser le quota, message, suspendre | capture vs référence | ✅ |
+| P-73 | Listes **Documents**, **Conversations** (+ détail), **Paiements**, **Abonnements**, **Offres** (versions), **Clients**, **Identités** | captures | ✅ |
+| P-74 | **Actions sensibles** : motif obligatoire, reconfirmation, journal append-only ; **affichage des prix** sur motif | pgTAP | ✅ |
+| P-75 | Configuration des durées d'accès (liens client, admin) | pgTAP | ✅ |
+| P-76 | **Accès admin depuis le chat** : « ADMIN » depuis une identité autorisée → lien à usage unique de 10 minutes | test | ✅ |
+| P-77 | Recherche globale (organisation, téléphone, document) | test | ✅ |
+| P-78 | Pilotage : vues alimentées par des agrégats réels (activation, conversion, coûts, échecs par étape) | capture | ✅ |
 
 ## 7. Mesure et exploitation (spec 014)
 
 | ID | Fonctionnalité v1 | Vérification | État |
 |---|---|---|---|
-| P-80 | Événements envoyés à **PostHog** (sans nom, téléphone, prix, contenu) ; sans clé : rien n'est envoyé | test | ⬜ |
-| P-81 | Audios et photos sources supprimés après une durée configurable | pgTAP + worker | ⬜ |
-| P-82 | Export des données depuis l'espace artisan | test | ⬜ |
-| P-83 | Suppression des données sur demande (chat, espace) avec conservation légale limitée | pgTAP | ⬜ |
+| P-80 | Événements envoyés à **PostHog** (sans nom, téléphone, prix, contenu) ; sans clé : rien n'est envoyé | test | ✅ (PostHog réel à brancher) |
+| P-81 | Audios et photos sources supprimés après une durée configurable | pgTAP + worker | ✅ |
+| P-82 | Export des données depuis l'espace artisan | test | ✅ |
+| P-83 | Suppression des données sur demande (chat, espace) avec conservation légale limitée | pgTAP | ✅ |
 
 ## Ce qui n'est pas repris, et pourquoi
 

@@ -32,11 +32,11 @@ function Documents() {
   const pages = list.data ? Math.max(1, Math.ceil(list.data.total / list.data.pageSize)) : 1;
 
   return (
-    <div>
+    <div className="px-4 py-6 sm:px-6">
       <PageTitle
         title={D.title}
         action={
-          <Link to="/app/documents/nouveau" className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-field)] bg-ink px-4 font-medium text-white hover:bg-ink-soft">
+          <Link to="/app/documents/nouveau" className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-field)] bg-ink px-4 font-semibold text-paper hover:bg-ink-soft">
             <FilePlus2 className="size-4" aria-hidden /> {D.new}
           </Link>
         }
@@ -66,8 +66,8 @@ function Documents() {
             <Empty icon={<FileText className="size-6" />} title={D.emptyTitle} text={filtered ? D.emptyFiltered : t.app.dashboard.emptyText} />
           </div>
         ) : (
-          <div className="card divide-y divide-line overflow-hidden">
-            {list.data.items.map((d) => <DocRow key={d.id} doc={d} currency={currency} />)}
+          <div className="-mx-4 border-t border-line sm:-mx-6">
+            {list.data.items.map((d) => <DocRow key={d.id} doc={d} currency={currency} showAmount />)}
           </div>
         )
       )}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button, Card, ErrorBox, Field, Input, Notice, PageTitle, SkeletonList } from "@/components/ui";
 import { api, type ApiError, useApi } from "@/lib/api";
 import { useI18n } from "@/l10n";
-import { useStaff } from "./admin";
+import { useStaff } from "@/lib/staff";
 
 // Configuration (ADM-5) : tout ce qui est générique se règle ici, sans déploiement.
 export const Route = createFileRoute("/admin/configuration")({ component: Configuration });
@@ -19,7 +19,7 @@ function Configuration() {
   const config = useApi<Config>("staff", "/v1/admin/config");
   const [tab, setTab] = useState<keyof typeof C.tabs>("plans");
   return (
-    <div>
+    <div className="px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.config} />
       <div className="mb-5 flex gap-1 overflow-x-auto" role="tablist">
         {(Object.keys(C.tabs) as Array<keyof typeof C.tabs>).map((k) => (

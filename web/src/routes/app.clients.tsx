@@ -50,7 +50,7 @@ function Clients() {
   }
 
   return (
-    <div>
+    <div className="px-4 py-6 sm:px-6">
       <PageTitle title={C.title} action={<Button icon={<Plus className="size-4" />} onClick={() => setEditing({ id: null, form: EMPTY })}>{C.new}</Button>} />
 
       {editing && (

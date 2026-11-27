@@ -153,3 +153,8 @@ export function formatDate(iso: string, _locale: string): string {
   const [y, m, d] = iso.slice(0, 10).split("-");
   return `${d}.${m}.${y}`;
 }
+
+/** Exemple de l'aperçu de présentation quand l'artisan n'a encore aucun document (P-64). */
+export function presentationSample(locale: string): { title: string; line: string } {
+  return locale.startsWith("en") ? { title: "Example quote", line: "Your service" } : { title: "Exemple de devis", line: "Votre prestation" };
+}

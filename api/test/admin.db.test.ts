@@ -56,8 +56,10 @@ describe.skipIf(!hasDatabase)("administration", () => {
     const detail = await (await req(s.token, "GET", `/v1/admin/organizations/${orgId}`)).json();
     expect(detail.identities[0].channel).toBe("simulator");
     expect((await req(s.token, "POST", `/v1/admin/organizations/${orgId}/status`, { status: "suspended" })).status).toBe(403);
-    expect((await req(a.token, "POST", `/v1/admin/organizations/${orgId}/status`, { status: "suspended" })).status).toBe(200);
-    expect((await req(a.token, "POST", `/v1/admin/organizations/${orgId}/status`, { status: "active" })).status).toBe(200);
+    // P-74 : motif obligatoire.
+    expect((await req(a.token, "POST", `/v1/admin/organizations/${orgId}/status`, { status: "suspended" })).status).toBe(422);
+    expect((await req(a.token, "POST", `/v1/admin/organizations/${orgId}/status`, { status: "suspended", reason: "contrôle de sécurité" })).status).toBe(200);
+    expect((await req(a.token, "POST", `/v1/admin/organizations/${orgId}/status`, { status: "active", reason: "contrôle terminé" })).status).toBe(200);
 
     const audit = await (await req(s.token, "GET", "/v1/admin/audit")).json();
     expect(audit.items.some((i: any) => i.action === "set_org_status")).toBe(true);

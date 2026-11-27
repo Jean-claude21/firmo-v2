@@ -3,16 +3,19 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAt
 import { useOnline } from "@/lib/api";
 import { useT } from "@/l10n";
 
-// Composants du design system (docs/design/DESIGN.md).
+// Composants du système validé de la v1 (docs/design/DESIGN.md, P-60) : rayon 5 px sur ce qui
+// s'actionne, aucune ombre, aucune couleur de marque.
 
-type Variant = "primary" | "accent" | "ghost" | "danger" | "outline";
+type Variant = "primary" | "accent" | "ghost" | "danger" | "outline" | "inverse";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-ink text-white hover:bg-ink-soft",
-  accent: "bg-amber text-ink hover:brightness-95",
+  primary: "bg-ink text-paper hover:bg-ink-soft",
+  // L'ancien « accent » devient l'action principale : le produit n'a pas de couleur propre.
+  accent: "bg-ink text-paper hover:bg-ink-soft",
   ghost: "bg-transparent text-ink hover:bg-ink/5",
-  outline: "border border-line bg-surface text-ink hover:bg-paper",
-  danger: "border border-danger/30 bg-surface text-danger hover:bg-danger-soft",
+  outline: "border-[1.5px] border-line bg-surface text-ink-soft hover:border-ink hover:text-ink",
+  danger: "border-[1.5px] border-danger/40 bg-surface text-danger hover:bg-danger-soft",
+  inverse: "bg-paper text-ink hover:bg-surface",
 };
 
 export function Button({
@@ -27,7 +30,7 @@ export function Button({
     <button
       {...rest}
       disabled={rest.disabled || loading}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-field)] px-4 text-[15px] font-medium transition disabled:cursor-not-allowed disabled:opacity-55 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-field)] px-5 text-[16px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
     >
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : icon}
       {children}
@@ -40,7 +43,7 @@ export function LinkButton({ href, variant = "primary", icon, children, classNam
     <a
       href={href}
       {...rest}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-field)] px-4 text-[15px] font-medium transition ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-field)] px-5 text-[16px] font-semibold transition ${VARIANTS[variant]} ${className}`}
     >
       {icon}
       {children}
@@ -62,7 +65,7 @@ export function Field({ label, hint, error, children, optional }: { label: strin
       </span>
       {children}
       {hint && !error && <span className="mt-1 block text-sm text-muted">{hint}</span>}
-      {error && <span className="mt-1 block text-sm text-danger">{error}</span>}
+      {error && <span className="mt-1 block text-sm text-danger" role="alert">{error}</span>}
     </label>
   );
 }
@@ -79,23 +82,28 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea rows={3} {...props} className={`field min-h-24 ${props.className ?? ""}`} />;
 }
 
-const STATUS_STYLE: Record<string, string> = {
-  draft: "bg-line/70 text-muted",
-  issued: "bg-info-soft text-info",
-  accepted: "bg-ok-soft text-ok",
-  refused: "bg-danger-soft text-danger",
-  partially_paid: "bg-warn-soft text-warn",
-  paid: "bg-ok text-white",
-  cancelled: "bg-line/70 text-muted line-through",
-  replaced: "bg-line/70 text-muted",
-  expired: "bg-warn-soft text-warn",
+// Statuts : pastille courte en chasse fixe, point d'état ; le texte porte toujours le sens.
+const STATUS_DOT: Record<string, string> = {
+  draft: "bg-mute-soft",
+  issued: "bg-ink",
+  accepted: "bg-ok",
+  refused: "bg-danger",
+  partially_paid: "bg-warn",
+  paid: "bg-ok",
+  cancelled: "bg-mute-soft",
+  replaced: "bg-mute-soft",
+  expired: "bg-warn",
+  pending: "bg-warn",
+  succeeded: "bg-ok",
+  failed: "bg-danger",
 };
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, label }: { status: string; label?: string }) {
   const t = useT();
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLE[status] ?? STATUS_STYLE.draft}`}>
-      {t.status[status as keyof typeof t.status] ?? status}
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-paper-alt px-2.5 py-0.5 font-mono text-[12px] text-ink-soft ${status === "cancelled" ? "line-through" : ""}`}>
+      <span className={`size-1.5 rounded-full ${STATUS_DOT[status] ?? STATUS_DOT.draft}`} aria-hidden />
+      {label ?? t.status[status as keyof typeof t.status] ?? status}
     </span>
   );
 }
@@ -103,7 +111,7 @@ export function StatusBadge({ status }: { status: string }) {
 export function Empty({ icon, title, text, action }: { icon?: ReactNode; title: string; text?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      {icon && <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-amber-soft text-amber-text">{icon}</div>}
+      {icon && <div className="mb-3 flex size-12 items-center justify-center border border-line bg-surface text-ink-soft">{icon}</div>}
       <p className="text-lg font-semibold">{title}</p>
       {text && <p className="mt-1 max-w-sm text-muted">{text}</p>}
       {action && <div className="mt-5">{action}</div>}
@@ -114,7 +122,7 @@ export function Empty({ icon, title, text, action }: { icon?: ReactNode; title: 
 export function ErrorBox({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   const t = useT();
   return (
-    <div role="alert" className="flex flex-col items-start gap-3 rounded-[var(--radius-card)] border border-danger/25 bg-danger-soft p-4 text-danger sm:flex-row sm:items-center">
+    <div role="alert" className="flex flex-col items-start gap-3 border border-danger/30 bg-danger-soft p-4 text-danger sm:flex-row sm:items-center">
       <AlertTriangle className="size-5 shrink-0" aria-hidden />
       <p className="flex-1">{message ?? t.common.error}</p>
       {onRetry && (
@@ -146,7 +154,7 @@ export function OfflineBanner() {
   const t = useT();
   if (online) return null;
   return (
-    <div role="status" className="flex items-center gap-2 bg-warn px-4 py-2 text-sm font-medium text-white">
+    <div role="status" className="flex items-center gap-2 bg-ink px-4 py-2 text-sm font-medium text-paper">
       <WifiOff className="size-4" aria-hidden /> {t.common.offline}
     </div>
   );
@@ -156,8 +164,8 @@ export function PageTitle({ title, action, subtitle }: { title: string; subtitle
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="font-serif text-[28px] font-bold leading-tight sm:text-3xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
+        <h1 className="text-[30px] font-bold leading-[36px] tracking-[-0.01em]">{title}</h1>
+        {subtitle && <p className="mt-1 text-ink-soft">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -165,6 +173,26 @@ export function PageTitle({ title, action, subtitle }: { title: string; subtitle
 }
 
 export function Notice({ tone = "info", children }: { tone?: "info" | "ok" | "warn"; children: ReactNode }) {
-  const styles = { info: "bg-info-soft text-info", ok: "bg-ok-soft text-ok", warn: "bg-amber-soft text-amber-text" };
-  return <div role="status" className={`rounded-[var(--radius-field)] px-4 py-3 text-sm font-medium ${styles[tone]}`}>{children}</div>;
+  const styles = { info: "border-line bg-paper-alt text-ink", ok: "border-ok/30 bg-ok-soft text-ok", warn: "border-warn/30 bg-warn-soft text-warn" };
+  return <div role="status" className={`border-l-[3px] px-4 py-3 text-[15px] font-medium ${styles[tone]}`}>{children}</div>;
+}
+
+/** Onglets (Détail · Conditions · Totaux) : soulignement encre sous l'onglet actif. */
+export function Tabs<T extends string>({ value, onChange, items }: { value: T; onChange: (v: T) => void; items: Array<{ value: T; label: string }> }) {
+  return (
+    <div role="tablist" className="grid border-b border-line" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+      {items.map((i) => (
+        <button
+          key={i.value}
+          role="tab"
+          type="button"
+          aria-selected={value === i.value}
+          onClick={() => onChange(i.value)}
+          className={`min-h-12 border-b-2 px-2 text-[16px] font-semibold transition ${value === i.value ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
+        >
+          {i.label}
+        </button>
+      ))}
+    </div>
+  );
 }

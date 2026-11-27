@@ -87,6 +87,8 @@ export interface ChatWords {
   pdfCaption: (typeLabel: string, number: string) => string;
   notUnderstood: string;
   outage: string;
+  /** L'IA vient de tomber : la lecture qui suit est simplifiée (P-39). */
+  degradedNote: string;
   outageVoice: string;
   outagePhoto: string;
   transcribeFailed: string;
@@ -114,6 +116,9 @@ export interface ChatWords {
   noQuote: string;
   deletionRecorded: string;
   adminLink: (url: string, minutes: number) => string;
+  /** Demandés depuis la console après un incident (P-71). */
+  askVoiceAgain: string;
+  askPhotoAgain: string;
   adminDenied: string;
   updated: string;
   lineNotFound: (n: number) => string;
@@ -210,6 +215,7 @@ const fr: ChatWords = {
   pdfCaption: (t, n) => `${t} ${n}`,
   notUnderstood: "Je n'ai pas bien saisi la fin. Redis-moi juste les dernières lignes, ou écris-les.",
   outage: "Je n'arrive pas à lire une nouvelle source en ce moment. Écris chaque ligne comme ceci : quantité | libellé | prix. Ton devis déjà commencé reste disponible.",
+  degradedNote: "Je lis en mode simplifié en ce moment. Si une ligne manque ou est mal lue, écris-la comme ceci : quantité | libellé | prix.",
   outageVoice: "J'ai bien reçu ton vocal, mais je n'arrive pas à l'écouter en ce moment. Ton brouillon est conservé. Écris chaque ligne comme ceci : quantité | libellé | prix.",
   outagePhoto: "J'ai bien reçu ta photo, mais je n'arrive pas à lire la feuille en ce moment. Ton brouillon est conservé. Écris chaque ligne comme ceci : quantité | libellé | prix.",
   transcribeFailed: "Je n'ai pas bien saisi ce vocal. Redis-le, ou écris les lignes.",
@@ -246,6 +252,8 @@ const fr: ChatWords = {
   noQuote: "Je n'ai pas trouvé ce devis.",
   deletionRecorded: "C'est noté : ta demande de suppression est enregistrée. Je te confirme ici quand elle est traitée.",
   adminLink: (url, minutes) => `Ton accès à l'administration, valable ${minutes} minutes : ${url}`,
+  askVoiceAgain: "Je n'ai pas pu écouter ton dernier vocal. Renvoie-le, ou écris ta vente : ton brouillon est gardé.",
+  askPhotoAgain: "Je n'ai pas pu lire ta dernière photo. Renvoie-la bien éclairée, ou écris ta vente : ton brouillon est gardé.",
   adminDenied: "Cette identité n'ouvre pas l'administration.",
   updated: "C'est enregistré.",
   lineNotFound: (n) => `Je ne vois pas de ligne ${n}.`,
@@ -306,6 +314,7 @@ const en: ChatWords = {
   shareLink: (url) => `Link to forward to your client: ${url}`,
   notUnderstood: "I didn't catch the end. Just repeat the last lines, or type them.",
   outage: "I can't read a new source right now. Write each line like this: quantity | item | price. Your current draft is kept.",
+  degradedNote: "I'm reading in simplified mode right now. If a line is missing or wrong, write it like this: quantity | item | price.",
   outageVoice: "I got your voice note but can't listen to it right now. Your draft is kept. Write each line like this: quantity | item | price.",
   outagePhoto: "I got your photo but can't read the sheet right now. Your draft is kept. Write each line like this: quantity | item | price.",
   transcribeFailed: "I didn't catch that voice note. Say it again, or type the lines.",
@@ -340,6 +349,8 @@ const en: ChatWords = {
   noQuote: "I couldn't find that quote.",
   deletionRecorded: "Noted: your deletion request is recorded. I'll confirm here once it's done.",
   adminLink: (url, minutes) => `Your admin access, valid ${minutes} minutes: ${url}`,
+  askVoiceAgain: "I couldn't listen to your last voice note. Send it again, or write your sale: your draft is kept.",
+  askPhotoAgain: "I couldn't read your last photo. Send it again in good light, or write your sale: your draft is kept.",
   adminDenied: "This identity doesn't open the admin console.",
   updated: "Saved.",
   lineNotFound: (n) => `I don't see a line ${n}.`,

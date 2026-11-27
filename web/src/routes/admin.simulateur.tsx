@@ -114,7 +114,7 @@ function Simulator() {
   }
 
   return (
-    <div>
+    <div className="px-5 py-6 lg:px-7">
       <PageTitle title={t.admin.nav.simulator} subtitle={S.intro} />
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <label className="block w-48">
