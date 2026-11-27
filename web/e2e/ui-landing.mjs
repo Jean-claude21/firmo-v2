@@ -23,6 +23,19 @@ for (const [label, viewport] of Object.entries({ desktop: { width: 1440, height:
   await page.getByRole("radio", { name: "Couleur #1F6F43" }).click();
   check(await page.locator(`img[src="/landing/doc-1f6f43.webp"]`).waitFor({ timeout: 5000 }).then(() => true, () => false), `${label} le choix de couleur montre le vrai rendu`);
   check(await page.getByText("Toucher à l'argent de tes clients.").isVisible(), `${label} promesse : jamais l'argent des clients`);
+  // Spec 016 : ordre du framework, enjeu, ambition, preuves sourcées, objections.
+  const order = await page.evaluate(() => [...document.querySelectorAll("h1, h2")].map((h) => h.textContent?.trim() ?? ""));
+  const at = (s) => order.findIndex((h) => h.startsWith(s));
+  check(at("Ce qui se passe vraiment") === 1 && at("Ton devis te présente avant toi.") === 2, `${label} le problème puis l'ambition suivent l'accroche`, order.slice(0, 4).join(" | "));
+  check(at("Fait pour la façon") > at("Ce qu'on ne fera jamais") && at("Fait pour la façon") < at("Le prix") && at("Les questions qu'on nous pose") > at("Le prix") && at("Les questions qu'on nous pose") < at("Dis ta première vente"), `${label} preuves avant le prix, questions avant l'appel final`);
+  check(await page.getByText("Un devis qui part tard, ou qui fait brouillon").isVisible(), `${label} phrase d'enjeu`);
+  const sources = await page.locator("#preuves ~ div figcaption a, section[aria-labelledby=preuves] figcaption a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+  check(sources.length === 3 && sources.every((h) => h?.startsWith("https://")), `${label} chaque chiffre a sa source`, sources.join(", "));
+  check(await page.getByText(/pas encore de témoignage/).isVisible(), `${label} aucun témoignage inventé`);
+  const faq = page.locator("section[aria-labelledby=questions] details");
+  check(await faq.count() === 6, `${label} six questions fréquentes`);
+  await faq.nth(1).locator("summary").click();
+  check(await faq.nth(1).getByText(/numérote tes documents à la suite, sans trou/).isVisible(), `${label} une question s'ouvre et répond`);
   check(errors.length === 0, `${label} aucune erreur`, errors.join(" | "));
   await shot(page, `landing-${label}`);
 }

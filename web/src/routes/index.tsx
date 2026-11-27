@@ -194,6 +194,34 @@ function Landing() {
           </div>
         </section>
 
+        <section className="border-b border-line" aria-labelledby="probleme">
+          <div className={`${wrap} py-16`}>
+            <h2 id="probleme" className="text-[36px] font-semibold leading-[44px]">{L.realTitle}</h2>
+            <div className="mt-10 grid gap-10 md:grid-cols-3">
+              {L.real.map((r, i) => (
+                <div key={r.title}>
+                  <p className="font-mono text-[13px]" style={{ color: ARTISAN }}>{String(i + 1).padStart(2, "0")}</p>
+                  <h3 className="mt-3 text-[20px] font-semibold leading-7">{r.title}</h3>
+                  <p className="mt-2 text-[17px] leading-[27px] text-ink-soft">{r.text}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-12 max-w-[640px] border-l-2 pl-5 text-[20px] font-semibold leading-[30px]" style={{ borderColor: ARTISAN }}>{L.realStake}</p>
+          </div>
+        </section>
+
+        <section className="bg-ink text-paper" aria-labelledby="ambition">
+          <div className="mx-auto max-w-[820px] px-4 py-16 text-center sm:px-6">
+            <h2 id="ambition" className="text-[38px] font-semibold leading-[46px] sm:text-[44px] sm:leading-[52px]">{L.ambitionTitle}</h2>
+            <p className="mx-auto mt-4 max-w-[560px] text-[18px] leading-[28px] text-paper/80">{L.ambitionText}</p>
+            <p className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-mono text-[13px] uppercase tracking-[0.12em]">
+              <span className="text-paper/60">{L.ambitionBefore}</span>
+              <span aria-hidden className="text-paper/40">→</span>
+              <span style={{ color: "#e07a5a" }}>{L.ambitionAfter}</span>
+            </p>
+          </div>
+        </section>
+
         <section className="border-b border-line">
           <div className={`${wrap} grid items-center gap-10 py-16 md:grid-cols-[minmax(0,360px)_1fr]`}>
             <img src="/landing/feuille-atelier.webp" alt={L.sheetAlt} loading="lazy" className="w-full shadow-[0_26px_50px_-26px_rgba(21,23,26,0.55)]" />
@@ -226,28 +254,13 @@ function Landing() {
 
         <section className="border-b border-line">
           <div className={`${wrap} py-16`}>
-            <h2 className="text-[36px] font-semibold leading-[44px]">{L.realTitle}</h2>
-            <div className="mt-10 grid gap-10 md:grid-cols-3">
-              {L.real.map((r, i) => (
-                <div key={r.title}>
-                  <p className="font-mono text-[13px]" style={{ color: ARTISAN }}>{String(i + 1).padStart(2, "0")}</p>
-                  <h3 className="mt-3 text-[20px] font-semibold leading-7">{r.title}</h3>
-                  <p className="mt-2 text-[17px] leading-[27px] text-ink-soft">{r.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-line bg-paper-alt">
-          <div className={`${wrap} py-16`}>
             <h2 className="text-[36px] font-semibold leading-[44px]">{L.colorsTitle}</h2>
             <p className="mb-8 mt-3 max-w-[520px] text-[18px] leading-[28px] text-ink-soft">{L.colorsLead}</p>
             <Colors />
           </div>
         </section>
 
-        <section className="border-b border-line">
+        <section className="border-b border-line bg-paper-alt">
           <div className={`${wrap} py-16`}>
             <h2 className="text-[36px] font-semibold leading-[44px]">{L.spaceTitle}</h2>
             <p className="mt-3 max-w-[560px] text-[18px] leading-[28px] text-ink-soft">{L.spaceLead}</p>
@@ -278,11 +291,45 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-b border-line">
+        <section className="border-b border-line" aria-labelledby="preuves">
+          <div className={`${wrap} py-16`}>
+            <h2 id="preuves" className="text-[36px] font-semibold leading-[44px]">{L.factsTitle}</h2>
+            <p className="mt-3 max-w-[560px] text-[18px] leading-[28px] text-ink-soft">{L.factsLead}</p>
+            <div className="mt-10 grid gap-10 md:grid-cols-3">
+              {L.facts.map((f) => (
+                <figure key={f.figure} className="border-t-2 pt-5" style={{ borderColor: ARTISAN }}>
+                  <p className="text-[44px] font-bold leading-[48px] tracking-[-0.02em] tabular-nums">{f.figure}</p>
+                  <p className="mt-3 text-[17px] leading-[27px] text-ink-soft">{f.text}</p>
+                  <figcaption className="mt-3 text-[14px] text-muted">{L.factsSource} <a href={f.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-ink">{f.source}</a></figcaption>
+                </figure>
+              ))}
+            </div>
+            <p className="mt-10 text-[15px] text-muted">{L.factsNote}</p>
+          </div>
+        </section>
+
+        <section className="border-b border-line bg-paper-alt">
           <div className={`${wrap} py-16`}>
             <h2 className="text-[36px] font-semibold leading-[44px]">{L.priceTitle}</h2>
             <p className="mb-8 mt-3 text-[18px] text-ink-soft">{L.priceLead}</p>
             <Price />
+          </div>
+        </section>
+
+        <section className="border-b border-line" aria-labelledby="questions">
+          <div className="mx-auto max-w-[760px] px-4 py-16 sm:px-6">
+            <h2 id="questions" className="text-[36px] font-semibold leading-[44px]">{L.faqTitle}</h2>
+            <div className="mt-8 border-t border-line">
+              {L.faq.map((f) => (
+                <details key={f.q} className="group border-b border-line">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-[18px] font-semibold [&::-webkit-details-marker]:hidden">
+                    {f.q}
+                    <span aria-hidden className="text-[22px] leading-none text-muted transition-transform group-open:rotate-45">+</span>
+                  </summary>
+                  <p className="pb-5 text-[17px] leading-[27px] text-ink-soft">{f.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 
