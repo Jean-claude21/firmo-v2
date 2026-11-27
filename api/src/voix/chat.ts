@@ -123,6 +123,14 @@ export interface ChatWords {
   error: string;
   subscriptionActive: (quota: number, until: string) => string;
   subscriptionFailed: string;
+  /** Recharge confirmée (P-52) : documents ajoutés, reste de la période. */
+  topUpAdded: (units: number, remaining: number) => string;
+  /** Conditions de fin (Struo) : avant la fin, à la fin (grâce), fin de la grâce. Sans lien : il expirerait. */
+  periodEnding: (days: number, until: string) => string;
+  periodEnded: (graceUntil: string) => string;
+  periodClosed: string;
+  /** Émission refusée : la période et sa grâce sont passées. */
+  expired: (url: string) => string;
   status: Record<string, string>;
   buttons: { issue: string; preview: string; edit: string; documents: string; settings: string };
 }
@@ -247,6 +255,13 @@ const fr: ChatWords = {
   error: "Je n'ai pas su traiter ce message. Ton brouillon est conservé : réessaie dans un instant.",
   subscriptionActive: (q, until) => `Ton abonnement est actif : ${q} documents jusqu'au ${until}.`,
   subscriptionFailed: "Le paiement n'est pas passé. Ton brouillon reste disponible ; tu peux réessayer depuis le même lien.",
+  topUpAdded: (u, r) => `Recharge ajoutée : ${u} documents de plus. Il t'en reste ${r} jusqu'à la fin de la période.`,
+  periodEnding: (d, until) => d > 1
+    ? `Ton abonnement se termine dans ${d} jours, le ${until}. Il ne se renouvelle pas tout seul : pour continuer, réponds ABONNEMENT.`
+    : `Ton abonnement se termine demain, le ${until}. Il ne se renouvelle pas tout seul : pour continuer, réponds ABONNEMENT.`,
+  periodEnded: (g) => `Ton abonnement est arrivé à sa fin. Tu peux encore émettre tes documents jusqu'au ${g}. Pour continuer, réponds ABONNEMENT.`,
+  periodClosed: "Ton abonnement est terminé. Tes documents restent consultables et téléchargeables, tes brouillons sont gardés. Pour émettre de nouveau, réponds ABONNEMENT.",
+  expired: (url) => `Ton abonnement est terminé. Ton brouillon reste disponible. Pour l'émettre, réponds ABONNEMENT ou ouvre : ${url}`,
   status: {
     draft: "brouillon", issued: "émis", accepted: "accepté", refused: "refusé", no_response: "sans réponse",
     partially_paid: "acompte reçu", paid: "payé", cancelled: "annulé", replaced: "remplacé",
@@ -334,6 +349,13 @@ const en: ChatWords = {
   error: "I couldn't handle this message. Your draft is kept: try again in a moment.",
   subscriptionActive: (q, until) => `Your subscription is active: ${q} documents until ${until}.`,
   subscriptionFailed: "The payment didn't go through. Your draft is kept; you can retry from the same link.",
+  topUpAdded: (u, r) => `Top-up added: ${u} more documents. You have ${r} left until the end of the period.`,
+  periodEnding: (d, until) => d > 1
+    ? `Your subscription ends in ${d} days, on ${until}. It doesn't renew by itself: to continue, reply SUBSCRIBE.`
+    : `Your subscription ends tomorrow, on ${until}. It doesn't renew by itself: to continue, reply SUBSCRIBE.`,
+  periodEnded: (g) => `Your subscription has reached its end. You can still issue documents until ${g}. To continue, reply SUBSCRIBE.`,
+  periodClosed: "Your subscription has ended. Your documents stay readable and downloadable, your drafts are kept. To issue again, reply SUBSCRIBE.",
+  expired: (url) => `Your subscription has ended. Your draft is kept. To issue it, reply SUBSCRIBE or open: ${url}`,
   status: {
     draft: "draft", issued: "issued", accepted: "accepted", refused: "declined", no_response: "no answer",
     partially_paid: "deposit received", paid: "paid", cancelled: "cancelled", replaced: "replaced",

@@ -280,6 +280,23 @@ export const en: Messages = {
       success: "Payment confirmed: your subscription is active.",
       failed: "The payment did not go through.",
       statuses: { pending: "Pending", succeeded: "Succeeded", failed: "Failed", cancelled: "Cancelled" },
+      topUpTitle: "Top-up",
+      topUp: (n: number) => `${n} more documents, until the end of the current period`,
+      buyTopUp: "Buy the top-up",
+      topUpKind: "Top-up",
+      inGrace: (d: string) => `Your period has ended. You can still issue documents until ${d}. Renew to keep going after that.`,
+      expired: "Your subscription has ended. Your documents stay readable and downloadable, your drafts are kept. To issue again, choose a plan.",
+      conditionsTitle: "Subscription terms",
+      conditions: (days: number, warn: number, grace: number) => [
+        `You pay in advance for ${days} days. There is no automatic renewal: to continue, you renew yourself.`,
+        "Renewing before the end starts right after the current period: the documents you have left are not lost.",
+        "Documents not used by the end of a period are not carried over. A top-up lasts until the end of the current period.",
+        `You are warned in your messaging app ${warn} day${warn > 1 ? "s" : ""} before the end, then the day before.`,
+        grace > 0
+          ? `After the end, ${grace} day${grace > 1 ? "s" : ""} of grace: everything keeps working. Then no new final document; your documents stay readable and downloadable, your drafts are kept.`
+          : "After the end, no new final document; your documents stay readable and downloadable, your drafts are kept.",
+        "A new version of the offer never changes a period already paid.",
+      ],
     },
   },
   publicDoc: {

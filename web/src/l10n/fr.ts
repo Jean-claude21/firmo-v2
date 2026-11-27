@@ -280,6 +280,23 @@ export const fr = {
       success: "Paiement confirmé : votre abonnement est actif.",
       failed: "Le paiement n'a pas abouti.",
       statuses: { pending: "En attente", succeeded: "Réussi", failed: "Échoué", cancelled: "Annulé" } as Record<string, string>,
+      topUpTitle: "Recharge",
+      topUp: (n: number) => `${n} documents de plus, jusqu'à la fin de la période en cours`,
+      buyTopUp: "Acheter la recharge",
+      topUpKind: "Recharge",
+      inGrace: (d: string) => `Votre période est terminée. Vous pouvez encore émettre vos documents jusqu'au ${d}. Renouvelez pour continuer ensuite.`,
+      expired: "Votre abonnement est terminé. Vos documents restent consultables et téléchargeables, vos brouillons sont gardés. Pour émettre de nouveau, choisissez une formule.",
+      conditionsTitle: "Conditions de l'abonnement",
+      conditions: (days: number, warn: number, grace: number) => [
+        `Vous payez d'avance pour ${days} jours. Il n'y a pas de reconduction automatique : pour continuer, vous renouvelez vous-même.`,
+        "Un renouvellement avant la fin commence à la suite de la période en cours : les documents qui vous restent ne sont pas perdus.",
+        "Les documents non utilisés à la fin d'une période ne sont pas reportés. Une recharge vaut jusqu'à la fin de la période en cours.",
+        `Vous êtes prévenu dans votre messagerie ${warn} jour${warn > 1 ? "s" : ""} avant la fin, puis la veille.`,
+        grace > 0
+          ? `Après la fin, ${grace} jour${grace > 1 ? "s" : ""} de grâce : tout continue. Ensuite, plus de nouveau document final ; vos documents restent consultables et téléchargeables, vos brouillons sont gardés.`
+          : "Après la fin, plus de nouveau document final ; vos documents restent consultables et téléchargeables, vos brouillons sont gardés.",
+        "Une nouvelle version de l'offre ne change jamais une période déjà payée.",
+      ],
     },
   },
   publicDoc: {

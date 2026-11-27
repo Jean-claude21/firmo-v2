@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Ban, Gift, PlayCircle } from "lucide-react";
+import { ArrowLeft, Ban, Gift, PlayCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Button, Card, ErrorBox, Notice, SkeletonList, StatusBadge } from "@/components/ui";
 import { api, type ApiError, useApi } from "@/lib/api";
@@ -16,7 +16,7 @@ interface Detail {
   documents: Array<{ id: string; type: string; status: string; number: string | null; totalMinor: string; client: string | null; createdAt: string }>;
   messages: Array<{ id: string; direction: string; kind: string; text: string | null; status: string; error: string | null; createdAt: string }>;
   subscriptions: Array<{ kind: string; quota: number; used: number; periodStart: string; periodEnd: string | null; endedAt: string | null }>;
-  payments: Array<{ reference: string; status: string; amountMinor: string; currency: string; provider: string; createdAt: string }>;
+  payments: Array<{ id: string; reference: string; status: string; kind: string; amountMinor: string; currency: string; provider: string; providerReference: string | null; createdAt: string }>;
 }
 
 function OrganizationPage() {
@@ -38,6 +38,23 @@ function OrganizationPage() {
     try {
       await api("staff", path, { body });
       if (done) setNotice(done);
+      detail.reload();
+    } catch (e) {
+      setError(e as ApiError);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // Rapprochement (P-56) : relu chez le fournisseur, appliqué une fois, motif au journal.
+  async function reconcile(paymentId: string) {
+    const reason = prompt(t.admin.config.reconcileReason);
+    if (!reason || reason.trim().length < 3) return;
+    setBusy(`reconcile:${paymentId}`);
+    setError(null);
+    try {
+      const r = await api<{ result: string }>("staff", `/v1/admin/payments/${paymentId}/reconcile`, { body: { reason } });
+      setNotice(t.admin.config.reconcileResult[r.result] ?? r.result);
       detail.reload();
     } catch (e) {
       setError(e as ApiError);
@@ -91,7 +108,14 @@ function OrganizationPage() {
           {d.subscriptions.map((s) => (
             <p key={s.periodStart}>{s.kind} · {s.used}/{s.quota}{s.periodEnd ? ` · → ${date(s.periodEnd, locale)}` : ""}{s.endedAt ? " · ✕" : ""}</p>
           ))}
-          {d.payments.map((p) => <p key={p.reference} className="text-muted">{p.reference} · {p.status} · {p.amountMinor} {p.currency}</p>)}
+          {d.payments.map((p) => (
+            <div key={p.reference} className="flex flex-wrap items-center justify-between gap-2 text-muted">
+              <span>{p.reference} · {p.provider}{p.kind === "top_up" ? ` · ${t.app.subscription.topUpKind}` : ""} · {p.status} · {p.amountMinor} {p.currency}</span>
+              {isAdmin && p.status === "pending" && p.providerReference && p.provider !== "simulator" && (
+                <Button variant="ghost" icon={<RefreshCw className="size-4" />} loading={busy === `reconcile:${p.id}`} onClick={() => reconcile(p.id)}>{t.admin.config.reconcile}</Button>
+              )}
+            </div>
+          ))}
         </Card>
       </div>
 

@@ -111,7 +111,7 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
                         where d.org_id = $1 order by d.created_at desc limit 20`, [id]),
       sql<Row>(d.pool, "select id, direction, kind, left(coalesce(transcript, text), 300) as text, status, error, created_at from public.messages where org_id = $1 order by created_at desc limit 30", [id]),
       sql<Row>(d.pool, "select kind, quota, used, period_start, period_end, ended_at from public.subscriptions where org_id = $1 order by created_at desc", [id]),
-      sql<Row>(d.pool, "select reference, status, amount_minor::text as amount_minor, currency_code, provider_code, created_at from public.subscription_payments where org_id = $1 order by created_at desc limit 10", [id]),
+      sql<Row>(d.pool, "select id, reference, status, kind, amount_minor::text as amount_minor, currency_code, provider_code, provider_reference, created_at from public.subscription_payments where org_id = $1 order by created_at desc limit 10", [id]),
       sqlOne<{ v: unknown }>(d.pool, "select app.org_dashboard($1) as v", [id]),
     ]);
     return c.json({
@@ -121,7 +121,7 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
       documents: documents.map((r) => ({ id: r.id, type: r.type_code, status: r.status, number: r.number, totalMinor: r.total_minor, client: r.client, createdAt: r.created_at.toISOString() })),
       messages: messages.map((r) => ({ id: r.id, direction: r.direction, kind: r.kind, text: r.text, status: r.status, error: r.error, createdAt: r.created_at.toISOString() })),
       subscriptions: subscriptions.map((r) => ({ kind: r.kind, quota: r.quota, used: r.used, periodStart: r.period_start.toISOString(), periodEnd: r.period_end?.toISOString?.() ?? null, endedAt: r.ended_at?.toISOString?.() ?? null })),
-      payments: payments.map((r) => ({ reference: r.reference, status: r.status, amountMinor: r.amount_minor, currency: r.currency_code, provider: r.provider_code, createdAt: r.created_at.toISOString() })),
+      payments: payments.map((r) => ({ id: r.id, reference: r.reference, status: r.status, kind: r.kind, amountMinor: r.amount_minor, currency: r.currency_code, provider: r.provider_code, providerReference: r.provider_reference, createdAt: r.created_at.toISOString() })),
     });
   });
 
@@ -176,7 +176,9 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
       out[table] = await sql(d.pool, `select * from public.${table} order by ${table === "units" || table === "trades" || table === "document_types" || table === "templates" || table === "payment_providers" ? "position" : key}`);
     }
     out.taxes = await sql(d.pool, "select * from public.taxes order by country_code, code");
-    out.plans = await sql(d.pool, "select id, code, version, labels, currency_code, price_minor::text as price_minor, quota, period_days, active, created_at from public.plans order by code, currency_code, version desc");
+    out.plans = await sql(d.pool, `select id, code, version, labels, currency_code, price_minor::text as price_minor, quota, period_days, active, created_at,
+                                          grace_days, top_up_documents, top_up_price_minor::text as top_up_price_minor, provider_products
+                                   from public.plans order by code, currency_code, version desc`);
     return c.json(out);
   });
 
@@ -196,8 +198,17 @@ export function registerAdminRoutes(app: Hono<{ Variables: SessionVariables }>, 
       priceMinor: z.string().regex(/^\d{1,15}$/),
       quota: z.number().int().min(1).max(100000),
       periodDays: z.number().int().min(1).max(366),
+      // Spec 011 : grâce, recharge (taille et prix) et produits chez les fournisseurs ; absents, la
+      // version précédente est reprise.
+      graceDays: z.number().int().min(0).max(60).optional(),
+      topUpDocuments: z.number().int().min(1).max(10000).optional(),
+      topUpPriceMinor: z.string().regex(/^\d{1,15}$/).optional(),
+      providerProducts: z.record(z.string().regex(/^[a-z0-9_]+$/), z.string().min(1).max(80)).optional(),
     }));
-    const r = await sqlOne<{ id: string }>(d.pool, "select app.publish_plan($1, $2, $3::jsonb, $4::bigint, $5, $6, $7) as id", [b.code, b.currency, JSON.stringify(b.labels), b.priceMinor, b.quota, b.periodDays, actor(c)]);
+    const r = await sqlOne<{ id: string }>(d.pool, "select app.publish_plan($1, $2, $3::jsonb, $4::bigint, $5, $6, $7, $8, $9, $10::bigint, $11::jsonb) as id", [
+      b.code, b.currency, JSON.stringify(b.labels), b.priceMinor, b.quota, b.periodDays, actor(c),
+      b.graceDays ?? null, b.topUpDocuments ?? null, b.topUpPriceMinor ?? null, b.providerProducts ? JSON.stringify(b.providerProducts) : null,
+    ]);
     return c.json({ id: r.id }, 201);
   });
 

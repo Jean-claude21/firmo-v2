@@ -341,4 +341,40 @@ describe.skipIf(!hasDatabase)("conversation de bout en bout (simulateur)", () =>
     expect(b.duplicate).toBe(true);
     expect(b.messageId).toBe(a.messageId);
   });
+
+  // Spec 011 : confirmation de paiement (P-57) et conditions de fin reprises de Struo.
+  it("paiement confirmé, rappels de fin, puis abonnement terminé", async () => {
+    const c = chat();
+    await c.send("aide");
+    const pay = (await pool.query("select * from app.start_subscription_payment($1, 'standard', 'simulator', $2)", [c.orgId, uid("k")])).rows[0];
+    await pool.query("select app.settle_subscription_payment('simulator', $1, $2, 'succeeded', 2000, 'XOF')", [uid("ev"), pay.id]);
+    const job = async (kind: string, where: string) => {
+      const r = await pool.query<{ payload: Record<string, unknown> }>(
+        `select payload from public.jobs where kind = $1 and ${where}`, [kind]);
+      return r.rows[0]!.payload;
+    };
+    // Le message part de la file, pas de la route.
+    await engine.notifySubscription({ id: "n", kind: "notify_subscription", payload: await job("notify_subscription", `payload ->> 'payment_id' = '${pay.id}'`), attempts: 1 });
+    expect(await c.last()).toMatch(/^text:Ton abonnement est actif : 15 documents jusqu'au \d\d\.\d\d\.\d{4}\.$/);
+
+    const sub = (await pool.query("select id from public.subscriptions where org_id = $1 and kind = 'paid'", [c.orgId])).rows[0].id;
+    const notice = (stage: string) => job("subscription_notice", `dedupe_key = 'period_notice:${sub}:${stage}'`);
+    await engine.periodNotice({ id: "p", kind: "subscription_notice", payload: await notice("ending:3"), attempts: 1 });
+    expect(await c.last()).toMatch(/se termine dans 3 jours, le .* Il ne se renouvelle pas tout seul : pour continuer, réponds ABONNEMENT\.$/);
+    await engine.periodNotice({ id: "p", kind: "subscription_notice", payload: await notice("ended"), attempts: 1 });
+    expect(await c.last()).toMatch(/Tu peux encore émettre tes documents jusqu'au /);
+
+    // Grâce passée : l'émission est refusée avec le bon message, le brouillon reste.
+    await pool.query("update public.subscriptions set period_start = now() - interval '40 days', period_end = now() - interval '5 days' where id = $1", [sub]);
+    await engine.periodNotice({ id: "p", kind: "subscription_notice", payload: await notice("closed"), attempts: 1 });
+    expect(await c.last()).toContain("Tes documents restent consultables et téléchargeables");
+    for (const m of [SALE, "le prix des portes c'est 45 000", "objet : porte d'entrée de l'école", "OK", "Menuiserie Afi", "OK"]) await c.send(m);
+    expect(await c.last()).toMatch(/^text:Ton abonnement est terminé\. Ton brouillon reste disponible\./);
+
+    // Renouvelé entre-temps : la période suivante coupe les rappels de la précédente.
+    const before = (await c.replies()).length;
+    await pool.query("select app.start_paid_period($1, (select id from public.plans where code = 'standard' and currency_code = 'XOF' and active))", [c.orgId]);
+    await engine.periodNotice({ id: "p", kind: "subscription_notice", payload: await notice("ending:1"), attempts: 1 });
+    expect((await c.replies()).length).toBe(before);
+  });
 });

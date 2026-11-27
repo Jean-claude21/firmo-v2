@@ -50,7 +50,8 @@ Projet `firmo`, configs `stg` et `prd`. Les clés personnelles (OpenAI…) sont 
 | `OPENAI_API_KEY` | lecture IA (vide : lecture simplifiée, signalée) |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | canal Telegram |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_FLOW_PROFILE_ID` | canal WhatsApp |
-| `MONEROO_SECRET_KEY`, `MONEROO_WEBHOOK_SECRET` | paiement de l'abonnement |
+| `MONEROO_SECRET_KEY`, `MONEROO_WEBHOOK_SECRET` | paiement de l'abonnement (Moneroo) |
+| `CHARIOW_API_KEY`, `CHARIOW_PULSE_SECRET` | paiement de l'abonnement (Chariow, fournisseur de la v1) |
 | `ERROR_REPORTING_DSN` | Sentry ou GlitchTip |
 | `VITE_WHATSAPP_NUMBER`, `VITE_TELEGRAM_BOT` | variables de construction du site (boutons « Commencer ») |
 
@@ -73,6 +74,19 @@ Projet `firmo`, configs `stg` et `prd`. Les clés personnelles (OpenAI…) sont 
   `WHATSAPP_FLOW_PROFILE_ID` et activer le drapeau `whatsapp_flows`.
 - **Moneroo** : webhook `<API_URL>/v1/billing/webhooks/moneroo` ; activer le fournisseur
   `moneroo` dans la console (Configuration → Canaux et paiement).
+- **Chariow** : dans la boutique Chariow, un produit au prix de l'offre (v1 : `prd_s1bcdqkm`,
+  2 000 F CFA) ; son identifiant va dans la version d'offre (console → Offres → Produit Chariow).
+  Pulse : URL `<API_URL>/v1/billing/webhooks/chariow`, événements des ventes, secret =
+  `CHARIOW_PULSE_SECRET`. Mettre `CHARIOW_API_KEY`, redéployer, puis activer le fournisseur
+  `chariow`. Un paiement resté « en attente » se rapproche depuis la fiche de l'organisation
+  (« Relire chez le fournisseur », motif obligatoire).
+
+## Offre et conditions
+
+- Prix, quota, recharge (taille et prix), grâce et produit Chariow : console → Offres. Publier crée
+  une version ; les périodes déjà payées gardent la leur.
+- Rappel avant la fin : réglage `subscription_warn_days` (3 par défaut), puis la veille. Il vaut
+  pour les périodes créées après le changement.
 
 ## Équipe
 

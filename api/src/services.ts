@@ -15,7 +15,7 @@ import { registerChannelRoutes } from "./routes/channels.js";
 import { registerPortalRoutes } from "./routes/portal.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { registerAdminRoutes } from "./routes/admin.js";
-import { monerooProvider, type PaymentProvider, simulatorProvider } from "./billing/providers.js";
+import { chariowProvider, monerooProvider, type PaymentProvider, simulatorProvider } from "./billing/providers.js";
 import type { SessionSigner } from "./lib/session.js";
 import { diskStore, type ObjectStore, s3Store } from "./lib/storage.js";
 import { DocumentRenderer } from "./render/renderer.js";
@@ -101,10 +101,13 @@ export async function buildServices(ctx: ServiceContext): Promise<Services> {
   const engine = new ConversationEngine({ store: conversations, documents, reader, channels, files, render, webUrl: config.WEB_URL });
   worker.on("process_message", (job) => engine.handleJob(job));
   worker.on("notify_subscription", (job) => engine.notifySubscription(job));
+  worker.on("subscription_notice", (job) => engine.periodNotice(job));
 
-  // Paiement de l'abonnement (spec 006) : simulateur hors production, Moneroo dès que la clé existe.
+  // Paiement de l'abonnement (specs 006, 011) : simulateur hors production, Moneroo et Chariow dès que
+  // leur clé existe (et qu'ils sont activés en base).
   const providers: PaymentProvider[] = [];
   if (config.MONEROO_SECRET_KEY) providers.push(monerooProvider({ secretKey: config.MONEROO_SECRET_KEY, webhookSecret: config.MONEROO_WEBHOOK_SECRET }));
+  if (config.CHARIOW_API_KEY) providers.push(chariowProvider({ apiKey: config.CHARIOW_API_KEY, webhookSecret: config.CHARIOW_PULSE_SECRET }));
   if (config.FIRMO_ENV !== "production") providers.push(simulatorProvider());
 
   const modules: RouteModule[] = [

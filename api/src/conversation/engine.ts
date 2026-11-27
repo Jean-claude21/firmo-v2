@@ -795,7 +795,9 @@ export class ConversationEngine {
     } catch (error) {
       if (error instanceof HttpError && /quota/.test(error.message)) {
         const { token } = await this.d.store.accessLink(ctx.orgId, "portal", "/app/abonnement");
-        await this.say(t, w.limit(this.portalUrl(token)));
+        // Plus aucun droit (période et grâce passées) : abonnement terminé ; sinon, quota atteint.
+        const ent = await this.d.documents.entitlement(ctx.orgId);
+        await this.say(t, ent ? w.limit(this.portalUrl(token)) : w.expired(this.portalUrl(token)));
         return;
       }
       throw error;
@@ -998,18 +1000,47 @@ export class ConversationEngine {
     await this.say(t, t.w.link(kind, this.portalUrl(token), minutes));
   }
 
-  /** Tâche `notify_subscription` : l'artisan apprend dans son chat que son abonnement est actif. */
+  /**
+   * Tâche `notify_subscription` (P-57), mise en file par la confirmation du paiement : abonnement
+   * actif, recharge ajoutée ou paiement échoué. Un échec d'envoi est repris par la file.
+   */
   async notifySubscription(job: Job): Promise<void> {
     const orgId = String(job.payload.org_id ?? "");
     const ok = job.payload.outcome === "succeeded";
     const ctx = await this.d.store.context(orgId);
     const w = chatWords(ctx.locale);
-    const ent = await this.d.documents.entitlement(orgId);
-    const until = ent?.periodEnd ? ent.periodEnd.slice(0, 10).split("-").reverse().join(".") : "";
+    // La période que ce paiement a ouverte ou rechargée (un renouvellement anticipé commence plus tard).
+    const sub = job.payload.subscription_id ? await this.d.store.periodNotice(String(job.payload.subscription_id)) : null;
+    const ent = sub ? null : await this.d.documents.entitlement(orgId);
+    const quota = sub?.quota ?? ent?.quota ?? 0;
+    const until = dayOf(sub?.periodEnd ?? ent?.periodEnd ?? null);
+    const text = !ok
+      ? w.subscriptionFailed
+      : job.payload.kind === "top_up"
+        ? w.topUpAdded(Number(job.payload.units ?? 0), Math.max(0, quota - (sub?.used ?? ent?.used ?? 0)))
+        : w.subscriptionActive(quota, until);
+    await this.tellOrg(orgId, text);
+  }
+
+  /** Tâche `subscription_notice` : conditions de fin (avant la fin, à la fin, fin de la grâce). */
+  async periodNotice(job: Job): Promise<void> {
+    const n = await this.d.store.periodNotice(String(job.payload.subscription_id ?? ""));
+    if (!n?.send) return;
+    const w = chatWords((await this.d.store.context(n.orgId)).locale);
+    const stage = String(job.payload.stage);
+    const text = stage === "ending"
+      ? w.periodEnding(Number(job.payload.days ?? 1), dayOf(n.periodEnd))
+      : stage === "ended"
+        ? w.periodEnded(dayOf(n.graceEnd))
+        : w.periodClosed;
+    await this.tellOrg(n.orgId, text);
+    await this.d.store.emit(n.orgId, "subscription_notice", { stage });
+  }
+
+  private async tellOrg(orgId: string, text: string): Promise<void> {
     for (const id of await this.d.store.identities(orgId)) {
       const channel = this.d.channels.get(id.channel);
       if (!channel) continue;
-      const text = ok ? w.subscriptionActive(ent?.quota ?? 0, until) : w.subscriptionFailed;
       const r = await channel.sendText(id.to, text);
       await this.logOut(channel, id.identityId, "text", text, null, null, r.externalId);
     }
@@ -1102,4 +1133,11 @@ const EXPLICIT_CONFIRMATION = /(^|\s)(oui|ok|okay|yes|valide|valider|je valide|v
 
 function plainText(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[’`]/g, "'").replace(/[.,;:!?]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** Jour d'une date pour le chat : 28.11.2026 (date UTC de la base). */
+function dayOf(value: Date | string | null): string {
+  if (!value) return "";
+  const iso = typeof value === "string" ? value : value.toISOString();
+  return iso.slice(0, 10).split("-").reverse().join(".");
 }

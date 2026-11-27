@@ -86,7 +86,7 @@
 | Canaux | WhatsApp Cloud API, Telegram Bot API, simulateur — interface `Channel` |
 | Web | TanStack Start + Tailwind CSS, conteneur Docker sur Coolify |
 | Hébergement | Coolify (serveur `kete-contabo`), une application API et une application web par environnement |
-| Paiement de l'abonnement | interface `PaymentProvider` : simulateur (hors production), Moneroo |
+| Paiement de l'abonnement | interface `PaymentProvider` : simulateur (hors production), Moneroo, Chariow (décision 0006) |
 | Secrets | Doppler (`firmo-api`, `firmo-web`, références `personal-keys`) |
 
 Changer un élément de ce tableau exige une décision dans `docs/architecture/decisions/`.
@@ -109,4 +109,4 @@ Changer un élément de ce tableau exige une décision dans `docs/architecture/d
   l'architecture, version mise à jour (MAJEUR : principe retiré ou redéfini ; MINEUR : ajouté ;
   CORRECTIF : clarification).
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-14 | **Last Amended**: 2026-11-14
+**Version**: 1.0.1 | **Ratified**: 2026-11-14 | **Last Amended**: 2026-11-26

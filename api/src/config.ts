@@ -48,6 +48,9 @@ const schema = z.object({
   PAYMENTS_SIMULATOR_SECRET: z.string().default(""),
   MONEROO_SECRET_KEY: z.string().default(""),
   MONEROO_WEBHOOK_SECRET: z.string().default(""),
+  // Chariow (fournisseur de la v1) : clé d'API et secret des avis « pulse ».
+  CHARIOW_API_KEY: z.string().default(""),
+  CHARIOW_PULSE_SECRET: z.string().default(""),
 
   // Observabilité.
   ERROR_REPORTING_DSN: z.string().default(""),

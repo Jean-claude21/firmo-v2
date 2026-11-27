@@ -15,7 +15,9 @@ export const Route = createFileRoute("/app/abonnement")({
 interface Billing {
   email: string | null;
   entitlement: { kind: string; quota: number; used: number; remaining: number; periodEnd: string | null } | null;
-  plans: Array<{ code: string; label: string; priceMinor: string; quota: number; periodDays: number }>;
+  plans: Array<{ code: string; label: string; priceMinor: string; quota: number; periodDays: number; graceDays: number }>;
+  topUp: { documents: number; priceMinor: string } | null;
+  conditions: { warnDays: number; graceDays: number; inGrace: boolean; graceEnd: string | null };
   providers: Array<{ code: string; label: string; simulated: boolean; needsEmail: boolean }>;
   payments: Array<{ id: string; reference: string; status: string; amountMinor: string; provider: string; plan: string; createdAt: string }>;
 }
@@ -54,13 +56,13 @@ function Subscription() {
     };
   }, [paiement, billing.reload]);
 
-  async function subscribe(planCode: string) {
-    setBusy(planCode);
+  async function subscribe(planCode: string, kind: "subscription" | "top_up" = "subscription") {
+    setBusy(kind === "top_up" ? "top_up" : planCode);
     setError(null);
     try {
       const chosen = billing.data?.providers.find((p) => p.code === provider);
       const r = await api<{ checkoutUrl: string }>("org", "/v1/billing/checkout", {
-        body: { planCode, provider, ...(chosen?.needsEmail ? { email } : {}) },
+        body: { planCode, provider, kind, ...(chosen?.needsEmail ? { email } : {}) },
       });
       location.href = r.checkoutUrl;
     } catch (e) {
@@ -99,6 +101,8 @@ function Subscription() {
               </>
             )}
           </Card>
+          {e && billing.data.conditions.inGrace && billing.data.conditions.graceEnd && <Notice tone="warn">{S.inGrace(date(billing.data.conditions.graceEnd, locale))}</Notice>}
+          {!e && billing.data.payments.some((p) => p.status === "succeeded") && <Notice tone="warn">{S.expired}</Notice>}
 
           <section className="space-y-3">
             <h2 className="font-semibold">{S.plans}</h2>
@@ -133,8 +137,29 @@ function Subscription() {
                 </Button>
               </Card>
             ))}
+            {cur && billing.data.topUp && billing.data.plans[0] && (
+              <Card className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex-1">
+                  <p className="font-semibold">{S.topUpTitle}</p>
+                  <p className="mt-1 font-serif text-3xl font-bold">{money(billing.data.topUp.priceMinor, cur)}</p>
+                  <p className="text-muted">{S.topUp(billing.data.topUp.documents)}</p>
+                </div>
+                <Button variant="outline" icon={<CreditCard className="size-4" />} loading={busy === "top_up"} disabled={!provider} onClick={() => subscribe(billing.data!.plans[0]!.code, "top_up")}>
+                  {S.buyTopUp}
+                </Button>
+              </Card>
+            )}
             {error && !error.fields.email && <Notice tone="warn">{error.message}</Notice>}
           </section>
+
+          {billing.data.plans[0] && (
+            <section>
+              <h2 className="mb-3 font-semibold">{S.conditionsTitle}</h2>
+              <ul className="card list-disc space-y-2 py-4 pl-9 pr-4 text-sm text-muted">
+                {S.conditions(billing.data.plans[0].periodDays, billing.data.conditions.warnDays, billing.data.plans[0].graceDays).map((c) => <li key={c}>{c}</li>)}
+              </ul>
+            </section>
+          )}
 
           <section>
             <h2 className="mb-3 font-semibold">{S.history}</h2>

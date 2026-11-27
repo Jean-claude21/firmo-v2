@@ -248,6 +248,14 @@ export function pgConversationStore(pool: pg.Pool) {
       await sql(pool, "select app.record_reading($1, $2, $3, $4, $5, $6)", [orgId, kind, lines, toConfirm, durationMs, cost]);
     },
 
+    /** Rappel de fin de période : à envoyer ou non (renouvelé, close, suspendue), et ses dates. */
+    async periodNotice(subscriptionId: string): Promise<{ orgId: string; send: boolean; periodEnd: Date; graceEnd: Date; quota: number; used: number } | null> {
+      const rows = await sql<{ org_id: string; send: boolean; period_end: Date; grace_end: Date; quota: number; used: number }>(pool,
+        "select org_id, send, period_end, grace_end, quota, used from app.period_notice($1)", [subscriptionId]);
+      const r = rows[0];
+      return r ? { orgId: r.org_id, send: r.send, periodEnd: r.period_end, graceEnd: r.grace_end, quota: r.quota, used: r.used } : null;
+    },
+
     async flag(key: string): Promise<boolean> {
       const rows = await sql<{ enabled: boolean }>(pool, "select enabled from public.feature_flags where key = $1", [key]);
       return rows[0]?.enabled ?? false;
