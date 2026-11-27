@@ -87,9 +87,10 @@ export function startMaintenance(opts: { pool: pg.Pool; files: ObjectStore; sink
   };
   if (opts.sink) {
     const sink = opts.sink;
-    timers.push(setInterval(safe("analytics", () => relayAnalytics(opts.pool, sink)), 60_000));
+    // Par lot, toutes les heures : chaque passage réveille la base (LEARNINGS-BASES-SERVERLESS.md).
+    timers.push(setInterval(safe("analytics", () => relayAnalytics(opts.pool, sink)), 60 * 60_000));
   }
-  timers.push(setInterval(safe("media", () => purgeMedia(opts.pool, opts.files)), 60 * 60_000));
+  timers.push(setInterval(safe("media", () => purgeMedia(opts.pool, opts.files)), 24 * 60 * 60_000));
   for (const t of timers) t.unref();
   return () => timers.forEach(clearInterval);
 }

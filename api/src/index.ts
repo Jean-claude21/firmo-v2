@@ -7,7 +7,7 @@ import { sentryReporter } from "./lib/report.js";
 import { sessionSigner } from "./lib/session.js";
 import { pgPortalSessionStore } from "./routes/portal-session.js";
 import { buildServices } from "./services.js";
-import { listenForJobs, pgJobStore, Worker } from "./worker/worker.js";
+import { pgJobStore, Worker } from "./worker/worker.js";
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL);
@@ -38,6 +38,7 @@ const app = createApp({
     worker: () => config.WORKER_ENABLED === "false" || worker.isRunning,
   },
   portalSessions: pgPortalSessionStore(pool),
+  afterWrite: () => worker.wake(),
   modules,
   reportError,
 });
@@ -46,17 +47,14 @@ const server = serve({ fetch: app.fetch, port: config.PORT }, (info) =>
   console.log(`firmo-api (${config.FIRMO_ENV}) sur :${info.port}`),
 );
 
-let stopListening: (() => void) | undefined;
 if (config.WORKER_ENABLED === "true") {
   worker.start();
-  stopListening = listenForJobs(pool, () => worker.wake(), (m, e) => console.error(m, e ?? ""));
   services.startSchedules?.();
 }
 
 async function shutdown(signal: string) {
   console.log(`arrêt (${signal})`);
   server.close();
-  stopListening?.();
   services.stopSchedules?.();
   await worker.stop();
   await pool.end();
