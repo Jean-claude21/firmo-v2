@@ -1,8 +1,10 @@
 import type pg from "pg";
 
 // Worker de traitement (décision 0005) : réclame des tâches dans la file `jobs`, appelle le
-// gestionnaire de leur type, enregistre le succès ou l'échec. Réveillé par NOTIFY firmo_jobs,
-// sinon interroge la file à intervalle régulier (tâches différées, reprises).
+// gestionnaire de leur type, enregistre le succès ou l'échec. Réveillé par ce processus quand une
+// tâche est créée ou qu'une requête a écrit en base ; sinon il dort jusqu'à l'échéance de la
+// prochaine tâche, une heure au plus. Plus de LISTEN : Neon coupe la connexion en s'endormant, et la
+// reconnexion le réveillait (LEARNINGS-BASES-SERVERLESS.md).
 
 export interface Job {
   id: string;
@@ -23,6 +25,8 @@ export interface JobStore {
   complete(id: string): Promise<void>;
   fail(id: string, error: string, retry: boolean): Promise<void>;
   enqueue(kind: string, payload: Record<string, unknown>, dedupeKey?: string, runAt?: Date): Promise<string | null>;
+  /** Milliseconds until the next pending job is due (0 if one is due), or null if none. */
+  nextDueIn?(): Promise<number | null>;
 }
 
 export function pgJobStore(pool: pg.Pool): JobStore {
@@ -39,6 +43,13 @@ export function pgJobStore(pool: pg.Pool): JobStore {
     },
     async fail(id, error, retry) {
       await pool.query("select app.fail_job($1, $2, $3)", [id, error, retry]);
+    },
+    async nextDueIn() {
+      const r = await pool.query<{ ms: string | null }>(
+        "select greatest(0, extract(epoch from min(run_at) - now()) * 1000)::bigint::text as ms from public.jobs where status = 'pending'",
+      );
+      const ms = r.rows[0]?.ms;
+      return ms == null ? null : Number(ms);
     },
     async enqueue(kind, payload, dedupeKey, runAt) {
       const r = await pool.query<{ id: string | null }>(
@@ -131,9 +142,23 @@ export class Worker {
           if (this.stopped) return;
           const again = this.wakeRequested;
           this.wakeRequested = false;
-          this.schedule(again ? 0 : (this.options.pollMs ?? 2000));
+          if (again) return this.schedule(0);
+          void this.nextDelay().then((next) => {
+            if (!this.stopped) this.schedule(next);
+          });
         });
     }, delay);
+  }
+
+  /**
+   * Le prochain passage : à l'échéance de la prochaine tâche, au plus tard dans `pollMs` (une heure
+   * par défaut). Entre deux, rien ne lit la base : Neon peut dormir. Une tâche créée par ce
+   * processus réveille le worker tout de suite (`wake`).
+   */
+  private async nextDelay(): Promise<number> {
+    const ceiling = this.options.pollMs ?? 60 * 60_000;
+    const due = await this.store.nextDueIn?.().catch(() => null);
+    return due == null ? ceiling : Math.min(Math.max(due, 1000), ceiling);
   }
 
   private async run(job: Job): Promise<void> {
@@ -153,31 +178,4 @@ export class Worker {
       this.running -= 1;
     }
   }
-}
-
-/** Écoute NOTIFY firmo_jobs sur une connexion dédiée ; se reconnecte en cas de coupure. */
-export function listenForJobs(pool: pg.Pool, onNotify: () => void, log?: (m: string, e?: unknown) => void) {
-  let client: pg.PoolClient | undefined;
-  let closed = false;
-  const connect = async () => {
-    try {
-      client = await pool.connect();
-      client.on("notification", () => onNotify());
-      client.on("error", (error) => {
-        log?.("[worker] écoute interrompue", error);
-        client?.release(true);
-        client = undefined;
-        if (!closed) setTimeout(connect, 2000);
-      });
-      await client.query("listen firmo_jobs");
-    } catch (error) {
-      log?.("[worker] écoute impossible", error);
-      if (!closed) setTimeout(connect, 5000);
-    }
-  };
-  void connect();
-  return () => {
-    closed = true;
-    client?.release(true);
-  };
 }

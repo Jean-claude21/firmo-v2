@@ -60,14 +60,17 @@ describe("sessions", () => {
 });
 
 describe("routes du socle", () => {
-  it("GET /health indique l'état", async () => {
-    const res = await app().app.request("/health");
+  it("GET /health répond sans toucher la base (Neon peut dormir)", async () => {
+    const res = await app({ database: false }).app.request("/health");
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ status: "ok", database: true, worker: true });
+    const body = await res.json();
+    expect(body).toMatchObject({ status: "ok", worker: true });
+    expect(body).not.toHaveProperty("database");
   });
 
-  it("GET /health en 503 si la base ne répond pas", async () => {
-    const res = await app({ database: false }).app.request("/health");
+  it("GET /health/db vérifie la base, en 503 si elle ne répond pas", async () => {
+    expect((await app().app.request("/health/db")).status).toBe(200);
+    const res = await app({ database: false }).app.request("/health/db");
     expect(res.status).toBe(503);
   });
 
